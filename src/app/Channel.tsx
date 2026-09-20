@@ -13,6 +13,8 @@ import { ADDED } from "@/lib/copy";
 import { useChannel, DEMO } from "./useChannel";
 import { useCountryFetch } from "./useCountryFetch";
 import { StoryPanel } from "./StoryPanel";
+import { AskPanel } from "@/components/AskPanel";
+import { useAsk } from "./useAsk";
 import type { Snapshot } from "@/lib/types";
 import COUNTRIES from "@/data/countries.json";
 
@@ -45,6 +47,8 @@ export function Channel({ children }: { children?: ReactNode }) {
   const [dockOpen, setDockOpen] = useState(false);
   const [tab, setTab] = useState<DockTab>("story");
   const [picked, setPicked] = useState<{ name: string; lat: number; lng: number } | null>(null);
+  /** A frame opened directly — from the rail, or a place chip in an answer. */
+  const [storyOverride, setStoryOverride] = useState<Snapshot | null>(null);
   const [flyTo, setFlyTo] = useState<{ lat: number; lng: number; ms?: number } | null>(null);
   const country = useCountryFetch();
 
@@ -56,6 +60,7 @@ export function Channel({ children }: { children?: ReactNode }) {
       opener.current = (document.activeElement as HTMLElement) ?? null;
       const [lng, lat] = centroid;
       setPicked({ name, lat, lng });
+      setStoryOverride(null);
       // T-01: the dock opens before any network call. The stages fill it in.
       setDockOpen(true);
       setTab("story");
@@ -118,6 +123,7 @@ export function Channel({ children }: { children?: ReactNode }) {
     if (!onAir) return;
     setPicked(null);
     country.reset();
+    setStoryOverride(null);
     setTab("story");
     setReturnTo(null);
     setFlyTo({ lat: onAir.place.lat, lng: onAir.place.lon, ms: FLY_CUT_MS });
@@ -139,10 +145,31 @@ export function Channel({ children }: { children?: ReactNode }) {
         if (c) openCountry(name, c);
       }}
     />
+  ) : storyOverride ? (
+    <StoryCard story={storyOverride} now={now} onAirId={onAir?.snapshotId ?? null} />
   ) : onAir ? (
     <StoryCard story={onAir} now={now} onAirId={onAir.snapshotId} />
   ) : (
     <EmptyState kind="first" region="story" title={ADDED.storyFirstTitle.text} body={ADDED.storyFirstBody.text} />
+  );
+
+  // The Ask thread lives here, not inside the panel, so switching to Story and back keeps the
+  // question, the answer and its chips. The Dock hides its panels rather than unmounting them,
+  // so the scroll position survives with it.
+  const askCandidates = useMemo(() => (onAir ? [onAir, ...feed.filter((f) => f.snapshotId !== onAir.snapshotId)] : feed), [onAir, feed]);
+  const chat = useAsk(askCandidates);
+
+  // T-05: a place named in an answer flies the globe and opens that Story — without clearing
+  // the thread behind it.
+  const goToPlace = useCallback(
+    (s: Snapshot) => {
+      setPicked(null);
+      country.reset();
+      setFlyTo({ lat: s.place.lat, lng: s.place.lon, ms: FLY_COUNTRY_MS });
+      setStoryOverride(s);
+      setTab("story");
+    },
+    [country],
   );
 
   const verified = country.outcome === "live" || country.outcome === "cached";
@@ -173,7 +200,22 @@ export function Channel({ children }: { children?: ReactNode }) {
           returnTo={returnTo}
           cutPulse={cutPulse}
           story={storyNode}
-          ask={<EmptyState kind="first" region="chat" title={ADDED.chatFirstTitle.text} body={ADDED.chatFirstBody.text} />}
+          ask={
+            <AskPanel
+              state={chat.state}
+              question={chat.question}
+              answer={chat.answer}
+              steps={chat.steps}
+              seconds={chat.seconds}
+              servedBy={chat.servedBy}
+              places={chat.places}
+              goTo={feed.slice(0, 3)}
+              now={now}
+              onAsk={chat.ask}
+              onStop={chat.stop}
+              onPlace={goToPlace}
+            />
+          }
           onClose={closeDock}
           onReturn={returnToAir}
         />
@@ -188,6 +230,8 @@ export function Channel({ children }: { children?: ReactNode }) {
         onOpen={(s) => {
           opener.current = (document.activeElement as HTMLElement) ?? null;
           setPicked(null);
+          country.reset();
+          setStoryOverride(s);
           setTab("story");
           setDockOpen(true);
           setFlyTo({ lat: s.place.lat, lng: s.place.lon, ms: FLY_COUNTRY_MS });

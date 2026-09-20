@@ -62,6 +62,7 @@ export function AskPanel({
   answer,
   steps,
   seconds,
+  servedBy,
   places,
   goTo,
   now,
@@ -74,6 +75,9 @@ export function AskPanel({
   answer?: string;
   steps?: ChatStep[];
   seconds?: string;
+  /** The model that answered. Data, like a source host or a score — not copy: the answer says
+   *  who produced it, because "an AI said so" is not an attribution. */
+  servedBy?: string | null;
   /** snapshotId → snapshot, for turning #place: links into chips. */
   places: Record<string, Snapshot>;
   /** The GO TO fallback when an answer names places the resolver could not match. */
@@ -101,14 +105,21 @@ export function AskPanel({
   };
 
   const summary = steps && seconds && (
-    <button
-      type="button"
-      onClick={() => setExpanded((v) => !v)}
-      aria-expanded={expanded}
-      className="self-start font-mono text-[10px] text-ink-muted tnum"
-    >
-      {ADDED.chatSummary.text(steps.length, seconds)}
-    </button>
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
+        className="self-start font-mono text-[10px] text-ink-muted tnum"
+      >
+        {ADDED.chatSummary.text(steps.length, seconds)}
+      </button>
+      {servedBy && (
+        <span className="font-mono text-[10px] tracking-[0.06em] text-ink-muted uppercase" title={servedBy}>
+          {servedBy}
+        </span>
+      )}
+    </div>
   );
 
   return (
