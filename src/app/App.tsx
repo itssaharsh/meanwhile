@@ -1,41 +1,40 @@
-import { useEffect } from "react";
-import { Route, Routes } from "react-router";
+import { Route, Routes, useLocation } from "react-router";
 import { NotFound } from "@/components/NotFound";
-import { GlobeSlate } from "@/components/globe/GlobeSlate";
-import { TopBar } from "@/components/TopBar";
 import { Kit } from "@/kit/Kit";
+import { Channel } from "./Channel";
+import { useChannel } from "./useChannel";
+import { useNow } from "@/lib/hooks";
 
-// Block 0 routes. `/` keeps serving the current channel (legacy.html) until block 2 replaces
-// it with the new shell, so nothing live changes while the component kit is reviewed.
-function LegacyChannel() {
-  useEffect(() => {
-    window.location.replace(`/legacy.html${window.location.search}`);
-  }, []);
-  return null;
-}
+// Block 2, step 1: the shell. `/` is the channel now; legacy.html stays reachable at its own
+// URL until the new app has been verified on prod.
+//
+// The kit is deliberately NOT wrapped in the shell — it is a workbench for components, and
+// mounting a second globe behind it would cost a WebGL context for nothing.
 
-// Until block 5 wires channel.onAir, the 404 makes no claim about where the channel is: the
-// TopBar stands by and the live line is omitted (NotFound's `error` state).
 function NotFoundRoute() {
+  const now = useNow(30_000);
+  const { onAir } = useChannel();
   return (
-    <div className="fixed inset-0 flex flex-col bg-canvas">
-      <TopBar state="standby" onAir={null} now={Date.now()} />
-      <div className="relative min-h-0 flex-1">
-        <div className="absolute inset-0 opacity-35 max-sm:opacity-[.22]">
-          <GlobeSlate state="loading" />
-        </div>
-        <NotFound state="error" onAir={null} now={Date.now()} onReturn={() => (window.location.href = "/")} />
-      </div>
-    </div>
+    <NotFound
+      state={onAir ? "idle" : "error"}
+      onAir={onAir}
+      now={now}
+      onReturn={() => (window.location.href = "/")}
+    />
   );
 }
 
 export function App() {
+  const { pathname } = useLocation();
+  if (pathname === "/_kit") return <Kit />;
+
+  // TopBar and globe live in Channel, outside this outlet. Routes render over them.
   return (
-    <Routes>
-      <Route path="/" element={<LegacyChannel />} />
-      <Route path="/_kit" element={<Kit />} />
-      <Route path="*" element={<NotFoundRoute />} />
-    </Routes>
+    <Channel>
+      <Routes>
+        <Route path="/" element={null} />
+        <Route path="*" element={<NotFoundRoute />} />
+      </Routes>
+    </Channel>
   );
 }
