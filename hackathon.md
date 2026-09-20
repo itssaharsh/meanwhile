@@ -1,6 +1,6 @@
 # Meanwhile
 
-**Live:** https://honorable-opossum-473.convex.site/legacy.html
+**Live:** https://honorable-opossum-473.convex.site/
 **Repo:** https://github.com/itssaharsh/meanwhile
 
 Most "live" webcams on the internet are lying to you.

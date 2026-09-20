@@ -20,10 +20,11 @@ Teal on screen means verified; grey means we could not verify. There is no third
 **Stack:** Convex (reactive queries, crons, file storage, hosting) · any OpenAI-compatible
 vision API · Firecrawl · AgentMail · Open-Meteo · Vite · globe.gl
 
-The page in production is still `legacy.html`, a single-file globe wired to three Convex
-subscriptions. The React rebuild from `DESIGN.md` / `UI-SPEC.md` / `COPY.md` is growing in
-`src/`, and its component kit — every component in every state, reachable by URL — is at
-`/_kit`. See `FRONTEND.md` for the wiring.
+Production serves the React app built from `DESIGN.md` / `UI-SPEC.md` / `COPY.md`. Its
+component kit — every component in every state, reachable by URL — is at `/_kit`, and
+`?demo=true` runs the whole thing off `src/fixtures.json` with no keys and no backend.
+`legacy.html`, the single-file globe this started as, now redirects to the root. See
+`FRONTEND.md` for the wiring.
 
 ---
 
