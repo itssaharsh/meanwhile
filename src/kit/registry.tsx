@@ -27,7 +27,7 @@ import { DeliveryChip } from "@/components/DeliveryChip";
 import { FeedRail, type RailState } from "@/components/FeedRail";
 import { Globe } from "@/components/globe";
 import { NotFound, type NotFoundState } from "@/components/NotFound";
-import { Intro } from "@/components/Intro";
+import { Landing } from "@/app/Landing";
 import { NewsPanel } from "@/components/NewsPanel";
 import { EmptyState, VerifiedChips } from "@/components/primitives";
 import { RailItem } from "@/components/RailItem";
@@ -313,17 +313,26 @@ function appState(id: string, ctx: KitCtx): ReactNode {
           }}
         />
       );
-    case "intro":
-    case "intro-reduced":
-      // The point of this state is that the channel is NOT stopped behind the card: the bar is
-      // live, the running order is full and the planet is turning. A judge dismisses it onto a
-      // screen that was already working.
+    case "landing":
+    case "landing-reduced":
+    case "landing-loading":
+      // The point of this state is that the channel is NOT stopped behind the landing: the bar
+      // is live, the running order is full and the planet is turning. Entering reveals a screen
+      // that was already working. `landing-loading` is the first paint, before a cut exists.
       return (
         <KitApp
           {...base}
           topBar={{ state: "onair", onAir: ON_AIR }}
-          stage={ON_AIR}
-          overlay={<Intro onStart={() => {}} onPick={() => {}} reduced={id === "intro-reduced"} />}
+          overlay={
+            <Landing
+              onAir={id === "landing-loading" ? null : ON_AIR}
+              feed={RUNNING_ORDER}
+              now={NOW}
+              onStart={() => {}}
+              onPick={() => {}}
+              reduced={id === "landing-reduced"}
+            />
+          }
         />
       );
     case "open-cut":
@@ -564,11 +573,13 @@ export const KIT: KitSection[] = [
     ],
   },
   {
-    id: "C-13",
-    name: "Intro (first visit)",
+    id: "C-17",
+    name: "Landing (/)",
     states: [
-      { id: "intro", frame: "app", render: (ctx) => appState("intro", ctx) },
-      { id: "intro-reduced", frame: "app", extra: true, render: (ctx) => appState("intro-reduced", ctx) },
+      { id: "landing", frame: "app", render: (ctx) => appState("landing", ctx) },
+      { id: "landing-loading", frame: "app", render: (ctx) => appState("landing-loading", ctx) },
+      { id: "landing-reduced", frame: "app", extra: true, render: (ctx) => appState("landing-reduced", ctx) },
+      { id: "landing-phone", frame: "phone", render: (ctx) => appState("landing", ctx) },
     ],
   },
   {

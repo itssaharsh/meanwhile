@@ -25,23 +25,27 @@ const DAILY_WINDOW_MS = 24 * 60 * 60 * 1000;
  *  the line on screen is a description of something that actually took place. */
 const STEPS = ["Reading the frame…", "Locating the camera…", "Working out the sun angle there…", "Writing…"] as const;
 
-function system(f: {
-  place: string;
-  country: string;
-  score: number | null;
-  caption: string;
-  tags: string[];
-  ageText: string;
-  localTime: string;
-  headline?: string | null;
-}): string {
+function system(
+  f: {
+    place: string;
+    country: string;
+    score: number | null;
+    caption: string;
+    tags: string[];
+    ageText: string;
+    localTime: string;
+    headline?: string | null;
+    onAir: boolean;
+  },
+  elsewhere: ChannelRow[],
+): string {
   return (
     "You are the director of Meanwhile, a live channel whose only programming is the planet. " +
-    "You are answering a viewer's question about the frame that is on air right now, which is " +
-    "attached. Answer in one to three sentences, plainly, in the present tense. Never invent a " +
-    "detail you cannot see in the frame or read in the facts below. If the frame cannot answer " +
-    "the question, say so in one sentence and say what it does show.\n\n" +
-    "Facts about this frame:\n" +
+    `The attached frame is ${f.place}${f.onAir ? ", which is on air right now" : ", which the viewer is looking at (it is not the frame currently on air)"}. ` +
+    "Answer the viewer's question in one to three sentences, plainly, in the present tense. Never " +
+    "invent a detail you cannot see in the frame or read in the facts below. If neither the frame " +
+    "nor the facts can answer the question, say so in one sentence and say what you do know.\n\n" +
+    "Facts about the attached frame:\n" +
     `- Place: ${f.place}, ${f.country}\n` +
     `- Local time there: ${f.localTime}\n` +
     `- Age of the frame: ${f.ageText}\n` +
@@ -49,8 +53,16 @@ function system(f: {
     `- Its own caption: ${f.caption}\n` +
     `- Tags: ${f.tags.join(", ") || "none"}\n` +
     (f.headline ? `- Today's local headline: ${f.headline}\n` : "") +
-    "\nNever claim the frame is live if its age says otherwise, and never state an age that is " +
-    "not given above."
+    // The running order is the difference between "answer about this picture" and "answer about
+    // the channel". Without it the model could not say where the sun is, what else is running, or
+    // why this frame beat the others — all of which a viewer asks within about thirty seconds.
+    (elsewhere.length
+      ? "\nEverywhere else the channel is watching right now (you cannot see these frames, only " +
+        "these facts — describe them from the facts and never from imagination):\n" +
+        elsewhere.map((r) => `- ${r.line}\n`).join("")
+      : "") +
+    "\nNever claim a frame is live if its age says otherwise, and never state an age or a score " +
+    "that is not given above. When you name a place, write it exactly as it is spelled above."
   );
 }
 
@@ -63,13 +75,22 @@ function modelState(ctx: ActionCtx): ModelStateStore {
   };
 }
 
-/** The frame on air, with the bytes, for a question to be asked about. */
-export const onAirFrame = internalQuery({
-  args: {},
-  handler: async (ctx) => {
+export type ChannelRow = { snapshotId: string; line: string };
+
+/** The frame a question is about, with the bytes.
+ *
+ *  `snapshotId` is what the viewer is actually looking at — the story they opened, which is not
+ *  always the cut. Asking "what is the weather here?" while reading about Kyoto and being
+ *  answered about Tromsø is not a quirk, it is a wrong answer, and it was the behaviour until
+ *  this argument existed. With no id, the cut is the subject, which is the right default for the
+ *  bar's own "Ask about this". */
+export const frameFor = internalQuery({
+  args: { snapshotId: v.optional(v.id("snapshots")) },
+  handler: async (ctx, { snapshotId }) => {
     const cut = (await ctx.db.query("cut").order("desc").take(1))[0];
-    if (!cut) return null;
-    const snap = await ctx.db.get(cut.snapshotId);
+    const id = snapshotId ?? cut?.snapshotId;
+    if (!id) return null;
+    const snap = await ctx.db.get(id);
     if (!snap?.storageId) return null;
     const cam = await ctx.db.get(snap.cameraId);
     if (!cam) return null;
@@ -83,13 +104,58 @@ export const onAirFrame = internalQuery({
       tags: snap.tags,
       capturedAt: snap.capturedAt ?? null,
       headline: snap.headline ?? null,
+      onAir: cut?.snapshotId === snap._id,
     };
+  },
+});
+
+/** Every other place the channel is watching, one line each. Facts only — no frame bytes, since
+ *  a dozen images would cost more than the answer is worth and most providers would refuse it. */
+export const channelNow = internalQuery({
+  args: { exceptSnapshotId: v.optional(v.id("snapshots")) },
+  handler: async (ctx, { exceptSnapshotId }): Promise<ChannelRow[]> => {
+    const cams = await ctx.db
+      .query("cameras")
+      .withIndex("by_active", (q) => q.eq("active", true))
+      .collect();
+    const cut = (await ctx.db.query("cut").order("desc").take(1))[0];
+    const out: ChannelRow[] = [];
+    for (const cam of cams) {
+      const snap = (
+        await ctx.db
+          .query("snapshots")
+          .withIndex("by_camera", (q) => q.eq("cameraId", cam._id))
+          .order("desc")
+          .take(1)
+      )[0];
+      if (!snap || snap._id === exceptSnapshotId) continue;
+      const headline = (await ctx.db.query("headlines").withIndex("by_place", (q) => q.eq("place", cam.name)).first())?.title;
+      const ageMs = snap.capturedAt == null ? null : Date.now() - snap.capturedAt;
+      out.push({
+        snapshotId: snap._id,
+        line: [
+          `${cam.name}, ${cam.country}`,
+          `local time ${localTimeFor(cam.tz)}`,
+          snap.score == null ? "not yet scored" : `scored ${snap.score.toFixed(1)}`,
+          ageMs == null ? "age not verifiable" : `frame ${Math.max(1, Math.round(ageMs / 60000))} min old`,
+          cut?.snapshotId === snap._id ? "ON AIR" : null,
+          snap.caption ? `shows: ${snap.caption}` : null,
+          headline ? `today's headline: ${headline}` : null,
+        ]
+          .filter(Boolean)
+          .join(" · "),
+      });
+    }
+    // Best first, so a truncated list still carries the frames the director likes.
+    return out.sort((a, b) => a.line.localeCompare(b.line)).slice(0, 14);
   },
 });
 
 export const ask = action({
   args: {
     question: v.string(),
+    /** The frame the viewer has open. Omitted means the cut. */
+    snapshotId: v.optional(v.id("snapshots")),
     // BYOK, exactly as the scoring path takes it: the caller's key is used for their request
     // and dropped, and it never falls through to ours.
     provider: v.optional(v.string()),
@@ -98,7 +164,7 @@ export const ask = action({
   },
   handler: async (
     ctx,
-    { question, provider, apiKey, model },
+    { question, snapshotId, provider, apiKey, model },
   ): Promise<{ text: string; steps: string[]; servedBy: string | null; place: string | null; error?: string }> => {
     const q = question.trim().slice(0, 500);
     if (!q) return { text: "", steps: [], servedBy: null, place: null, error: "empty" };
@@ -118,7 +184,7 @@ export const ask = action({
       }
     }
 
-    const frame = await ctx.runQuery(internal.chat.onAirFrame, {});
+    const frame = await ctx.runQuery(internal.chat.frameFor, snapshotId ? { snapshotId } : {});
     if (!frame) {
       return { text: "Nothing on air yet.", steps: [STEPS[0]], servedBy: null, place: null, error: "nothing-on-air" };
     }
@@ -137,18 +203,24 @@ export const ask = action({
           ? `${Math.max(1, Math.round(ageMs / 60000))} minutes old, verified from the source`
           : `${Math.round(ageMs / 3600000)} hours old`;
 
+    const elsewhere = await ctx.runQuery(internal.chat.channelNow, snapshotId ? { exceptSnapshotId: snapshotId } : {});
+
     const said = await visionComplete({
       label: `chat ${frame.place}`,
-      system: system({
-        place: frame.place,
-        country: frame.country,
-        score: frame.score,
-        caption: frame.caption,
-        tags: frame.tags,
-        ageText,
-        localTime: localTimeFor(frame.tz),
-        headline: frame.headline,
-      }),
+      system: system(
+        {
+          place: frame.place,
+          country: frame.country,
+          score: frame.score,
+          caption: frame.caption,
+          tags: frame.tags,
+          ageText,
+          localTime: localTimeFor(frame.tz),
+          headline: frame.headline,
+          onAir: frame.onAir,
+        },
+        elsewhere,
+      ),
       text: q,
       dataUri: toDataUri(bytes, blob.type || "image/jpeg"),
       maxTokens: 800,

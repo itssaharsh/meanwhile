@@ -580,6 +580,36 @@ Reduced motion: no fade, no rise, no stagger — content replaces in one frame.
 
 ---
 
+### C-17 Landing (`/`)   (base: custom, full-page overlay on the live shell)
+
+**Purpose:** a judge arriving cold learns what this is, sees that it is real, and is one click from watching it.
+
+**Placement:** route `/`, rendered inside `Channel` so the TopBar, globe and running order behind it are the live ones. `/watch` is the channel itself. Entering is a route change, never a page load: the globe is never torn down and no subscription drops. Replaced C-13, the first-visit intro card, which said less and was not addressable.
+
+**Size:** scrim `--canvas` at 88%, no blur. Content grid `max-width 1040`, 12 columns, `gap-x 40 / gap-y 28`. Left column 5 (head, row 1; legend + actions, row 2), preview column 7 starting at column 6 and spanning both rows. Below 900 it is one column at `max-width 560` and the **preview moves above the legend**, so the live frame is on the first screen of a phone.
+
+**Tokens:** H1 `--ff-display 600 36px` at `-0.035em` (28 below 640). Body `--ff-body 400 15px/1.6 --ink-muted`, `max-width 46ch`. Legend rows 13px with a 6px swatch. Stat line `--ff-mono 11px .1em uppercase tabular-nums`. Preview card `radius --r-lg`, `1px --accent` border, `ON AIR NOW` tag top-left on a `--canvas` plate; the running-order strip beneath is 4 tiles, `radius --r-md`, `1px --line`.
+
+**States:**
+- **idle:** everything present, preview showing the current cut.
+- **loading (no cut yet):** the preview is a skeleton the shape of the real card — never a spinner, never an empty box, so nothing jumps when the first cut lands.
+- **live:** the preview is a subscription, so it re-renders on every cut while the visitor reads. This is the signature moment of the screen and it needs no interaction to fire.
+- **hover / press** on the preview: `scale 1.004 / .997`, 150ms, `--ease-out-quint`.
+- **focus-visible:** ring on the preview and on both actions; `Start watching` takes focus on mount.
+- Reduced motion: no fade or rise, no preview scale.
+
+**Transitions:** `idle -START-> /watch` (T-17: the landing fades 150ms, nothing else moves — the channel underneath was never hidden, so there is nothing to reveal). `idle -PICK-> /watch` + the first covered country opens.
+
+**Colour:** the two legend swatches are the only amber and teal on the screen that are not bound to a frame. They carry `data-swatch` and no text of their own, which is how `/_kit`'s `amber-unbound` assertion lets them through — a swatch teaching the rule is not a claim about a frame.
+
+**Keyboard / a11y:** `role="dialog" aria-modal="false"` — it does not trap focus, because the channel behind it is not hidden and remains readable to a screen reader. The preview is a button labelled `On air now — {place}, {country}`.
+
+**Data:** `director.getCut` and `director.getFeed`, the same two subscriptions the channel uses. Nothing on this screen is a mock. `?demo=true` renders it from `src/fixtures.json`.
+
+**Acceptance:** `?state=landing`, `?state=landing-loading`, `?state=landing-reduced`, `?state=landing-phone`.
+
+---
+
 ### C-12 NotFound (404)   (base: custom, full-page route)
 
 **Purpose:** I landed on a dead link and, instead of a dead end, I get told the channel is still running and handed a way straight back into it.

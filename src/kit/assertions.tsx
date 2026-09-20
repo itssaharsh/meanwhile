@@ -96,6 +96,10 @@ export function checkScope(scope: Element): Violation[] {
       if (ps.content && ps.content !== "none" && ps.content !== "normal") colours.push(...paints(ps, false));
     }
     if (!colours.some(isAmber)) continue;
+    // A swatch in a legend is the rule being TAUGHT, not a claim about a frame — the landing
+    // shows an amber dot next to the sentence "amber marks the one frame on air". It must carry
+    // no text of its own, so this can never be used to smuggle an amber label past the rule.
+    if (el.hasAttribute("data-swatch") && (el.textContent ?? "").trim() === "") continue;
     const owner = el.closest("[data-snapshot-id]")?.getAttribute("data-snapshot-id");
     const what = `<${el.tagName.toLowerCase()}${el.className && typeof el.className === "string" ? ` .${el.className.split(" ")[0]}` : ""}> “${(el.textContent ?? "").trim().slice(0, 24)}”`;
     if (!owner) out.push({ rule: "amber-unbound", detail: `amber on ${what} with no snapshot` });

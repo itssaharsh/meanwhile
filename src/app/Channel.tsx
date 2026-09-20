@@ -1,6 +1,7 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { useQuery } from "convex/react";
+import { useLocation, useNavigate } from "react-router";
 import { api } from "../../convex/_generated/api";
 import { convex } from "@/lib/convex";
 import { useNow, useNarrow } from "@/lib/hooks";
@@ -20,7 +21,7 @@ import { useSubscribe } from "./useSubscribe";
 import { SubscribeSheet } from "@/components/SubscribeSheet";
 import { FrameDialog } from "@/components/FrameDialog";
 import { NewsPanel } from "@/components/NewsPanel";
-import { Intro } from "@/components/Intro";
+import { Landing } from "./Landing";
 import { useMutation, useAction } from "convex/react";
 import { AnimatePresence } from "motion/react";
 import type { Snapshot } from "@/lib/types";
@@ -64,6 +65,8 @@ export function Channel({ children }: { children?: ReactNode }) {
   const [snap, setSnap] = useState<0 | 62 | 92>(0);
   const [dockOpen, setDockOpen] = useState(false);
   const [tab, setTab] = useState<DockTab>("story");
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
   const [picked, setPicked] = useState<{ name: string; lat: number; lng: number } | null>(null);
   /** A frame opened directly — from the rail, or a place chip in an answer. */
   const [storyOverride, setStoryOverride] = useState<Snapshot | null>(null);
@@ -157,7 +160,11 @@ export function Channel({ children }: { children?: ReactNode }) {
   // question, the answer and its chips. The Dock hides its panels rather than unmounting them,
   // so the scroll position survives with it.
   const askCandidates = useMemo(() => (onAir ? [onAir, ...feed.filter((f) => f.snapshotId !== onAir.snapshotId)] : feed), [onAir, feed]);
-  const chat = useAsk(askCandidates);
+  // What the question is ABOUT: the story the viewer has open, falling back to the cut. A
+  // country story is a `stories` row rather than a pool frame, so it has no snapshot to send
+  // and the cut stays the subject.
+  const askSubject = (storyOverride ?? onAir)?.snapshotId ?? null;
+  const chat = useAsk(askCandidates, picked ? (onAir?.snapshotId ?? null) : askSubject);
   const mail = useSubscribe();
 
   // The director's chair: who is choosing the frame on air.
@@ -222,23 +229,11 @@ export function Channel({ children }: { children?: ReactNode }) {
     void fillNews({ max: 6 }).catch(() => undefined);
   }, [tab, fillNews]);
 
-  // First visit: say what this is, over a channel that is already running.
-  const [introOpen, setIntroOpen] = useState(() => {
-    if (typeof localStorage === "undefined") return true;
-    try {
-      return localStorage.getItem("mw.intro.seen") !== "1";
-    } catch {
-      return true;
-    }
-  });
-  const closeIntro = useCallback(() => {
-    setIntroOpen(false);
-    try {
-      localStorage.setItem("mw.intro.seen", "1");
-    } catch {
-      // A browser that refuses storage just sees it again; that is not worth an error.
-    }
-  }, []);
+  // `/` is the landing, `/watch` is the channel. Both render over the same shell, so entering
+  // is a route change and not a page load: the globe never restarts and the subscriptions never
+  // drop, which is the entire reason the shell exists.
+  const landing = pathname === "/";
+  const enterChannel = useCallback(() => navigate("/watch"), [navigate]);
 
   // T-05: a place named in an answer flies the globe and opens that Story — without clearing
   // the thread behind it.
@@ -301,12 +296,15 @@ export function Channel({ children }: { children?: ReactNode }) {
           {children}
 
           <AnimatePresence>
-            {introOpen && (
-              <Intro
-                key="intro"
-                onStart={closeIntro}
+            {landing && (
+              <Landing
+                key="landing"
+                onAir={onAir}
+                feed={feed}
+                now={now}
+                onStart={enterChannel}
                 onPick={() => {
-                  closeIntro();
+                  enterChannel();
                   const first = (coveredList ?? [])[0];
                   const c = first ? centroidOf(first) : null;
                   if (c && first) openCountry(first, c);
@@ -349,6 +347,11 @@ export function Channel({ children }: { children?: ReactNode }) {
               onAsk={chat.ask}
               onStop={chat.stop}
               onPlace={goToPlace}
+              subject={
+                askSubject
+                  ? { place: (storyOverride ?? onAir)!.place.name, onAir: askSubject === onAir?.snapshotId && !picked }
+                  : null
+              }
             />
             </Suspense>
           }

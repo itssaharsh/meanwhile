@@ -69,6 +69,7 @@ export function AskPanel({
   onAsk,
   onPlace,
   onStop,
+  subject,
 }: {
   state: ChatState;
   question?: string;
@@ -86,6 +87,9 @@ export function AskPanel({
   onAsk?: (text: string) => void;
   onPlace?: (s: Snapshot) => void;
   onStop?: () => void;
+  /** The place the question will be about. Shown only when it is not the frame on air, because
+   *  that is the only case where COPY §6's placeholder would be misleading. */
+  subject?: { place: string; onAir: boolean } | null;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [draft, setDraft] = useState("");
@@ -194,6 +198,12 @@ export function AskPanel({
           <Suggestion key={c} suggestion={c} onClick={(t) => onAsk?.(t)} />
         ))}
       </Suggestions>
+
+      {subject && !subject.onAir && (
+        <p className="shrink-0 bg-surface-1 px-4 pt-1 font-mono text-[10px] tracking-[0.12em] text-ink-muted uppercase">
+          {ADDED.askSubject.text(subject.place)}
+        </p>
+      )}
 
       <div className="shrink-0 bg-surface-1 px-4 pb-4 max-sm:pb-[calc(16px+env(safe-area-inset-bottom))]">
         <PromptInput onSubmit={({ text }) => onAsk?.(text)}>

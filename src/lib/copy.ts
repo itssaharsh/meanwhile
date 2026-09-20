@@ -237,23 +237,32 @@ export const ADDED = {
   // Added 2026-09-21 at the author's request: a judge landing on a spinning globe could not
   // tell what they were looking at, could not change the camera, and could not see the news
   // the channel had already gathered. The intro's title and body are COPY.md §10 verbatim.
-  introTitle: s("Meanwhile — the planet, on air", "COPY.md §10 OG title", "C-13 ?state=intro"),
+  introTitle: s("Meanwhile — the planet, on air", "COPY.md §10 OG title", "C-17 ?state=landing"),
   introBody: s(
     "An AI director watches real webcams around the world and cuts the best one on air. True day and night on a spinning globe. Every frame checked for age and place before it airs.",
     "COPY.md §10 description",
-    "C-13 ?state=intro",
+    "C-17 ?state=landing",
   ),
   introHow: s(
     "Teal means we read the frame's age from the source. Grey means we could not, and we say so.",
     "author request 2026-09-21 — the one rule a judge needs to read the colours",
-    "C-13 ?state=intro",
+    "C-17 ?state=landing",
   ),
-  introStart: s("Start watching", "author request 2026-09-21", "C-13 ?state=intro"),
-  introPick: s("Or pick a country", "author request 2026-09-21", "C-13 ?state=intro"),
+  introAmber: s(
+    "Amber marks the one frame on air. Nothing else in the product is amber.",
+    "author request 2026-09-22 — the other half of the colour rule, for the landing",
+    "C-17 ?state=landing",
+  ),
+  introStart: s("Start watching", "author request 2026-09-21", "C-17 ?state=landing"),
+  introPick: s("Or pick a country", "author request 2026-09-21", "C-17 ?state=landing"),
   chairTake: s("Put this on air", "author request 2026-09-21 — viewer takes the director's chair", "C-07 / C-04"),
   chairOnAir: s("On air now", "author request 2026-09-21 — the frame already on air", "C-07 / C-04"),
   chairHeld: f((time: string) => `You're directing · ${time} left`, "author request 2026-09-21", "C-01 ?state=chair", ["4 min"]),
   chairRelease: s("Give the chair back", "author request 2026-09-21", "C-01 ?state=chair"),
+  // COPY.md §6's placeholder is "Ask about what's on air". Once a viewer can ask about a frame
+  // that ISN'T on air, that placeholder is a claim the panel cannot keep, so the panel names its
+  // subject instead of the placeholder being quietly wrong.
+  askSubject: f((place: string) => `Asking about ${place}`, "author request 2026-09-22", "C-05 ?state=chat-subject", ["Kyoto"]),
   dockTabNews: s("News", "author request 2026-09-21 — the third dock tab", "C-16 ?state=news"),
   newsEmptyTitle: s("No headlines yet", "author request 2026-09-21", "C-16 ?state=news-empty"),
   newsEmptyBody: s(

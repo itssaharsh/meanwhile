@@ -4,7 +4,7 @@ Every string in the product lives in `src/lib/copy.ts`:
 
 - `COPY` is COPY.md exactly, with its header conventions applied (curly apostrophes, and a
   non-breaking space between each number and its unit).
-- `ADDED` holds the 70 strings COPY.md doesn't have. All of them are approved: "beat {place}
+- `ADDED` holds the 72 strings COPY.md doesn't have. All of them are approved: "beat {place}
   {score}" from the build brief, UI-SPEC.md's wording approved as rendered on 2026-09-19, and
   that day's three copy calls.
 
@@ -77,6 +77,22 @@ gathered. All thirteen are in the generated table at the bottom, under their C-n
   than a filler one. `Looking for today's news…` covers the one lookup, which runs when the
   tab is opened and not before.
 
+## Added on 2026-09-22
+
+Two strings, for two things the author found still missing.
+
+- **`introAmber` (C-17).** The landing teaches the colour rule before a judge meets it, and the
+  rule has two halves. `introHow` had the teal-and-grey half since the intro card; this is the
+  amber half, and it is the sentence the whole product is built around.
+- **`askSubject` (C-05).** COPY.md §6's placeholder is `Ask about what's on air`. That was true
+  while the chat could only ever see the cut. Now that a viewer can ask about the frame they have
+  open, the placeholder would be a claim the panel cannot keep, so the panel names its subject
+  above the composer whenever the subject is not the frame on air.
+
+Retired the same day: the C-13 intro card. `/` is now C-17, a route rather than an overlay, and
+it says the same things with the live channel inside it. Its strings (`introTitle`, `introBody`,
+`introHow`, `introStart`, `introPick`) moved across unchanged and are retagged C-17.
+
 ## Where COPY.md overrode UI-SPEC's inline copy
 
 - **TopBar chyron:** COPY's three parts replace `ON AIR · Cutting to Reykjavík — 8.4`.
@@ -99,7 +115,7 @@ gathered. All thirteen are in the generated table at the bottom, under their C-n
 - **Story no-result:** §5 No camera found. **Country no-result:** §5 All stale, plus All wrong
   place.
 
-## ADDED — 70 strings, approved
+## ADDED — 72 strings, approved
 
 | key | as rendered | source | where |
 |---|---|---|---|
@@ -181,12 +197,13 @@ with its agreements corrected and the numeral kept.
 | `COPY.countryEmpty.misplacedBody` | 1 frame came back and 1 was filmed somewhere else — it was Times Square. Wrong place, so it’s out. | 3 frames came back and 3 were filmed somewhere else — one was Times Square. Wrong place, so they’re out. |
 | `ADDED.chatSummary` | 1 step · 2.1 s | 3 steps · 2.1 s |
 
-## Strings beyond COPY.md (70)
+## Strings beyond COPY.md (72)
 
 Each rendered with the arguments its real call site passes.
 
 | key | renders as | source | used by |
 | --- | --- | --- | --- |
+| `askSubject` | Asking about Kyoto | author request 2026-09-22 | C-05 ?state=chat-subject |
 | `beat` | beat Reykjavík 8.1 | build brief | C-10 beat line |
 | `chairHeld` | You're directing · 4 min left | author request 2026-09-21 | C-01 ?state=chair |
 | `chairOnAir` | On air now | author request 2026-09-21 — the frame already on air | C-07 / C-04 |
@@ -223,11 +240,12 @@ Each rendered with the arguments its real call site passes.
 | `globeLostBody` | Countries are still clickable from the list. | UI-SPEC C-02 error | C-02 ?state=contextlost |
 | `globeRestore` | Restore picture | UI-SPEC C-02 error | C-02 ?state=contextlost |
 | `globeUnavailable` | Picture unavailable on this device | UI-SPEC C-02 error | C-02 ?state=contextlost-twice |
-| `introBody` | An AI director watches real webcams around the world and cuts the best one on air. True day and night on a spinning globe. Every frame checked for age and place before it airs. | COPY.md §10 description | C-13 ?state=intro |
-| `introHow` | Teal means we read the frame's age from the source. Grey means we could not, and we say so. | author request 2026-09-21 — the one rule a judge needs to read the colours | C-13 ?state=intro |
-| `introPick` | Or pick a country | author request 2026-09-21 | C-13 ?state=intro |
-| `introStart` | Start watching | author request 2026-09-21 | C-13 ?state=intro |
-| `introTitle` | Meanwhile — the planet, on air | COPY.md §10 OG title | C-13 ?state=intro |
+| `introAmber` | Amber marks the one frame on air. Nothing else in the product is amber. | author request 2026-09-22 — the other half of the colour rule, for the landing | C-17 ?state=landing |
+| `introBody` | An AI director watches real webcams around the world and cuts the best one on air. True day and night on a spinning globe. Every frame checked for age and place before it airs. | COPY.md §10 description | C-17 ?state=landing |
+| `introHow` | Teal means we read the frame's age from the source. Grey means we could not, and we say so. | author request 2026-09-21 — the one rule a judge needs to read the colours | C-17 ?state=landing |
+| `introPick` | Or pick a country | author request 2026-09-21 | C-17 ?state=landing |
+| `introStart` | Start watching | author request 2026-09-21 | C-17 ?state=landing |
+| `introTitle` | Meanwhile — the planet, on air | COPY.md §10 OG title | C-17 ?state=landing |
 | `mailBounced` | Bounced · 20:38 UTC | UI-SPEC C-09, shaped like COPY §7's chips | C-09 ?state=mail-bounced |
 | `mailDone` | Done | UI-SPEC C-09 success | C-09 ?state=mail-delivered |
 | `mailUnconfirmed` | No confirmation — check spam | UI-SPEC C-09 | C-09 ?state=mail-unconfirmed |

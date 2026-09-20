@@ -89,7 +89,10 @@ function linkPlaces(answer: string, candidates: Snapshot[]): { text: string; pla
   return { text, places };
 }
 
-export function useAsk(candidates: Snapshot[]): Ask {
+/** @param candidates every place a chip could resolve to.
+ *  @param subject the snapshotId the question is ABOUT — the story the viewer has open. Null
+ *  means the cut, which is what the bar's own "Ask about this" means. */
+export function useAsk(candidates: Snapshot[], subject?: string | null): Ask {
   const askAction = useAction(api.chat.ask);
   const [state, setState] = useState<ChatState>("empty");
   const [question, setQuestion] = useState("");
@@ -146,7 +149,9 @@ export function useAsk(candidates: Snapshot[]): Ask {
         return;
       }
 
-      askAction({ question: q })
+      // The frame the viewer has open, not whatever the director happens to be showing. The
+      // first candidate is the subject: Channel puts the open story at the head of the list.
+      askAction({ question: q, ...(subject ? { snapshotId: subject as never } : {}) })
         .then((r) => {
           if (cancelled.current) return;
           clearTimers();
@@ -170,7 +175,7 @@ export function useAsk(candidates: Snapshot[]): Ask {
           setState("error");
         });
     },
-    [askAction, candidates],
+    [askAction, candidates, subject],
   );
 
   const stop = useCallback(() => {

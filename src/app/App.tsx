@@ -18,7 +18,7 @@ function NotFoundRoute() {
   // Routed, not reloaded: a full page load would tear down the globe and the subscriptions,
   // which is the one thing the shell exists to prevent. The channel keeps running underneath
   // this page the whole time it is shown.
-  const back = () => navigate("/", { replace: true });
+  const back = () => navigate("/watch", { replace: true });
   return <NotFound state={onAir ? "idle" : "error"} onAir={onAir} now={now} onReturn={back} onPick={back} />;
 }
 
@@ -30,7 +30,10 @@ export function App() {
   return (
     <Channel>
       <Routes>
+        {/* `/` renders the landing INSIDE Channel (it needs the live cut and running order),
+            so both real routes are empty outlets here. */}
         <Route path="/" element={null} />
+        <Route path="/watch" element={null} />
         <Route path="*" element={<NotFoundRoute />} />
       </Routes>
     </Channel>
