@@ -1,119 +1,101 @@
 # Meanwhile
 
-Meanwhile is a television channel whose only programming is the planet. An AI director scores
-real webcam frames for beauty and cuts to the best one on air — the user watches; they do not
-query.
-
 **Live:** https://honorable-opossum-473.convex.site/legacy.html
+**Repo:** https://github.com/itssaharsh/meanwhile
 
----
+Most "live" webcams on the internet are lying to you.
 
-## What it does
+I learned this while building something else. A webcam directory showed me a thumbnail of
+Shibuya crossing under a red LIVE badge; the file it served had `Last-Modified: October 2022`.
+Once I started checking, it was everywhere — years-old stills labelled live, and grids of
+"cameras in Kenya" where the biggest fresh frame turned out to be Times Square.
 
-An AI director watches real public webcams around the world and cuts the best one on air. True
-day and night on a spinning globe. Every frame is checked for age and place before it airs.
+So I built a television channel whose only programming is the planet, and whose entire value is
+that it verifies before it shows you anything. An AI director watches real public webcams,
+scores each frame for how worth watching it is, and cuts to the best one. Everyone sees the same
+cut at the same moment. Click any country and it goes and finds a camera there while you wait,
+narrating what it's doing.
 
-Click any of 177 countries and it goes and finds a live camera there, on demand.
+The rule underneath all of it: a frame's age comes from the source's own `Last-Modified`,
+measured against that host's own clock. No timestamp means no age claim, ever. Teal means
+verified, grey means I could not verify, and there is no third colour for "probably fine".
 
----
+## How the sponsor tools are used
 
-## How each sponsor tool is used
+**Convex** is not a database sitting behind an API here — it is the broadcast mechanism.
+`director:getCut` is a query every viewer subscribes to, so when the director writes a new cut,
+every open browser repaints. No polling, no socket code. A 20-minute cron re-pulls and re-scores
+the camera pool, a 6-hour cron deletes old snapshots and their blobs, and an hourly cron walks
+the country-to-camera map ten countries at a time. Frames live in Convex file storage, so what
+you see is a picture I fetched and kept rather than a hotlink to a camera that has since moved
+on. Actions do the outside world, mutations keep the database consistent, and that split is what
+lets a country search report its progress stage by stage while it runs. The site is served from
+the same deployment through the static-hosting component, and AgentMail's delivery webhook
+arrives at an HTTP action on the same origin.
 
-### Convex — the whole backend, and the reason it feels live
+**OpenAI** is the director's eye. Every frame that survives the age and place checks goes to a
+vision model, which returns a score out of ten, a one-line narration, three to six concrete tags,
+and whether the frame shows daylight. That score is the editorial decision — it is what puts a
+camera on air. The same call answers the chat: ask "what am I looking at?" and the model is shown
+the actual frame, its age and its facts, and told not to call it live when it isn't.
 
-Not a database behind an API. The channel *is* Convex:
+The vision call sits behind a provider layer with model failover, and the failover crosses
+providers: small OpenAI models first, nine Gemini models beneath them. A balance running out
+costs the better model, not the channel. Bring your own key and it uses yours instead, for your
+request only.
 
-- **Reactive subscriptions** are the broadcast mechanism. `director:getCut` is a query every
-  viewer subscribes to; when the director writes a new cut, every open browser repaints. There
-  is no polling, no socket code, no cache invalidation.
-- **Cron + scheduler** run the channel: a 20-minute cron re-pulls and re-scores the camera pool,
-  a 6-hour cron prunes old snapshots and their blobs, an hourly cron refreshes the country →
-  camera map. Per-camera work is staggered with `ctx.scheduler.runAfter`.
-- **File storage** holds every frame we broadcast, so the image on screen is one we fetched and
-  kept — not a hotlink to a webcam that may have moved on.
-- **Actions** do the outside world (vision models, Firecrawl, AgentMail, image downloads);
-  **mutations** keep the database consistent; the split is what makes the ladder resumable.
-- **Static hosting** (`@convex-dev/static-hosting`) serves the frontend from the same origin as
-  the backend, so there is one URL and no CORS.
-- **HTTP actions** receive the AgentMail delivery webhook at `/agentmail/webhook`.
+**Firecrawl** never runs on the cron — camera frames come from direct image URLs, which cost
+nothing. It runs when a person does something. Click a country and three differently-phrased
+searches find camera pages, five of them get scraped, and directory pages are followed one level
+down to where the real frame lives. Separately, one news search per story attaches what is
+actually happening in that place today, cached per place so a quiet town doesn't re-search every
+twenty minutes.
 
-### OpenAI — the director's eye, and the narrator
+**AgentMail** sends you the frame that's on air — the picture, the place, and the time it was
+taken. Its webhook reports back `delivered`, `bounced` or `rejected` over a Convex HTTP action,
+and the interface shows that real state instead of claiming success the moment you hit send.
 
-Every frame that survives the age and place checks is sent to a vision model, which returns a
-structured verdict: a 0–10 score for beauty and human interest, a one-line narration, 3–6
-concrete tags, and whether the frame is daylight. That score is the editorial decision — it is
-what puts a camera on air.
+## What's real
 
-The vision call sits behind a provider layer (`convex/providers.ts`) with a failover chain, so a
-model outage degrades instead of breaking the channel, and a viewer can bring their own key.
+The cameras are real public webcams and the frames are fetched live, stored, and shown. The
+scores, captions and tags are a real vision model's reading of that real frame. The day/night
+line on the globe is computed from the true subsolar point.
 
-### Firecrawl — demand-driven, never on the cron
+Freshness is proven rather than asserted, and the counts on screen reconcile: stale plus
+misplaced equals rejected, rejected plus kept equals the number of candidates. When a country
+search fails, it says which check failed and offers three countries verified working that minute.
 
-Firecrawl is used in exactly two places, and never once per camera per refresh:
+## What isn't
 
-1. **The country click.** `/v2/search` with three query formulations finds camera pages for a
-   country; `/v2/scrape` returns a page's HTML, and directories are followed one level down to
-   the single-camera pages where the real frame lives.
-2. **One headline per story.** A news-only search for what is happening in that place today,
-   attached to the frame on air. Cached per place, with misses cached too, so a place with no
-   news does not re-search on every pass.
+Coverage is uneven: 103 of 177 countries have a camera I can reach, and the globe shows exactly
+that in three tiers rather than pretending to cover the world.
 
-### AgentMail — "Send me this"
+Timezones are approximate — fixed offsets with no DST, and a longitude-derived guess for the
+country click, which is wrong for India, China and Spain among others.
 
-The frame on air, emailed. An AgentMail inbox sends the picture, the place and the time it was
-taken; the delivery webhook (Svix-signed, over a Convex HTTP action) reports back `delivered`,
-`bounced` or `rejected`, and the UI shows the real state rather than claiming success on submit.
+Some sources lie about their own freshness. Image CDNs restamp `Last-Modified` as they re-serve
+an old frame, so a `Last-Modified` identical to the response `Date` is treated as no timestamp,
+and a frame whose daylight contradicts its local clock keeps its place on screen but loses its
+age. Both guards exist because I got caught: a Nairobi frame arrived claiming to be one minute
+old, showing an overcast afternoon at two in the morning, with January burned into its corner.
 
----
+There is no viewer counter. The prototype invented an audience every two seconds and I deleted
+it rather than leave it on screen.
 
-## What's real and what isn't
+## AI assistance
 
-The product's entire value is that it verifies before it shows you anything, so this section is
-the honest one.
-
-**Real:**
-
-- The cameras are real public webcams. The frames are fetched live, stored, and shown.
-- **Freshness is proven, not asserted.** A frame's age is read from the source's own
-  `Last-Modified`, measured against that host's own `Date` header. No timestamp means no age
-  claim — ever.
-- The scores, captions and tags are a real vision model's output on that real frame.
-- The day/night terminator is computed from the true subsolar point, not a gradient.
-- The country click really does go and search the live web when it has to. The counts it shows
-  reconcile: `stale + misplaced = rejected`, `rejected + kept = n`.
-- Delivery states come from AgentMail's webhook, not from the send call returning 200.
-
-**Not real, or not yet:**
-
-- **The chat panel on the live page is not an LLM.** It is local pattern-matching over the
-  current feed. It is being replaced by a real model call.
-- **Timezones are approximate.** Seeded offsets are fixed (no DST), and the country click
-  derives one as `round(lng / 15)`, which is wrong for India, China, Spain and others.
-- **Coverage is uneven and shown as such.** 103 of 177 countries have a camera we can reach;
-  the globe tints only what a frame has actually proved within the hour, outlines what we hold a
-  camera for, and leaves the rest untouched. It does not pretend to cover the world.
-- **Some cameras lie about their own freshness.** Image CDNs restamp `Last-Modified` as they
-  re-serve an old frame. Two guards catch it: a `Last-Modified` exactly equal to the response
-  `Date` is treated as no timestamp, and a frame whose daylight contradicts its local clock
-  loses its age claim. A spoofed age is not an age.
-- There is no viewer counter. The prototype had one — a random walk that invented an audience
-  every two seconds — and it was removed rather than left on screen.
-
-**AI use:** this project was built with heavy AI assistance. The Convex backend, schema and
-pipelines were generated from a written build plan and then reviewed and wired by the author.
-External integrations use their public APIs; keys live only in Convex environment variables and
-never in this repo.
-
----
+I built this with heavy AI assistance (Claude). The Convex backend, schema and pipelines were
+generated from a written build plan, then reviewed and wired by me. The integrations use public
+APIs, and every key lives in Convex environment variables — none are in this repo.
 
 ## Running it
 
-No keys and no account required — the whole app runs on fixtures:
+No keys, no account, nothing to log into:
 
 ```bash
 npm install
 npm run dev:web        # http://localhost:5173/?demo=true
 ```
 
-Full setup, the environment variables, the cost controls and the deploy steps are in
-[README.md](README.md).
+That renders the whole app from fixtures. Setup, environment variables, cost controls and deploy
+steps are in [README.md](README.md).

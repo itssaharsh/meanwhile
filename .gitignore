@@ -6,3 +6,7 @@ dist/
 
 # Claude Code local settings
 .claude/
+
+# Convex agent-skill docs, re-installable with: npx convex ai-files install
+.agents/
+skills-lock.json

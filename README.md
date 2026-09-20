@@ -1,14 +1,29 @@
-# Meanwhile — live AI-directed Earth
+# Meanwhile
 
-An AI "director" watches real public webcams, scores each frame with a vision model, and
-broadcasts the best "moment" to every viewer live. Click any country to pull it on demand.
+Most "live" webcams on the internet are lying to you.
 
-**Stack:** Convex (realtime + cron + file storage + hosting) · any OpenAI-compatible vision API ·
-Firecrawl (news search + screenshots) · AgentMail · Windy Webcams API · Open-Meteo (no key) ·
-Vite · globe.gl
+I found this out the hard way. A thumbnail labelled LIVE on a webcam directory, showing a
+busy Shibuya crossing — `Last-Modified: October 2022`. Not a glitch, and not rare: aggregator
+sites are full of frames from years ago sitting under a red LIVE badge, next to grids of
+cameras that are in an entirely different country from the one you clicked.
 
-The live frontend is still `legacy.html` — a single-file globe UI wired to three Convex subscriptions — while the React rebuild from `DESIGN.md` / `UI-SPEC.md` / `COPY.md` grows in `src/`; its component kit is at `/_kit` (`npm run dev:web`). `/` redirects to the legacy page until the new shell replaces it.
-See `FRONTEND.md` for how the wiring works.
+So Meanwhile is a television channel whose only programming is the planet, and its whole value
+is that it checks before it shows you anything. An AI director watches real public webcams,
+scores each frame, and cuts to the best one. Every viewer sees the same cut at the same moment.
+Click any country and it goes and finds a camera there while you watch.
+
+The rule the whole thing is built around: a frame's age comes from the source's own
+`Last-Modified` header, measured against that host's own clock. No timestamp, no age claim.
+Teal on screen means verified; grey means we could not verify. There is no third colour for
+"probably fine".
+
+**Stack:** Convex (reactive queries, crons, file storage, hosting) · any OpenAI-compatible
+vision API · Firecrawl · AgentMail · Open-Meteo · Vite · globe.gl
+
+The page in production is still `legacy.html`, a single-file globe wired to three Convex
+subscriptions. The React rebuild from `DESIGN.md` / `UI-SPEC.md` / `COPY.md` is growing in
+`src/`, and its component kit — every component in every state, reachable by URL — is at
+`/_kit`. See `FRONTEND.md` for the wiring.
 
 ---
 
@@ -163,8 +178,9 @@ Two things that make this actually portable rather than nominally portable:
 
 ### What Firecrawl does here
 
-Firecrawl is **demand-driven**. The 20-minute cron never calls it per camera — camera frames
-come from direct image URLs, which cost nothing. It runs in exactly two places:
+Firecrawl never runs on the cron. Camera frames come from direct image URLs, which cost
+nothing, so the 20-minute refresh spends no credits at all. Firecrawl runs in two places, both
+of them driven by something a person did:
 
 1. **The country click** (`countries:start` → `countries:run`) — the money shot, and a
    ladder rather than a single attempt, because a first cut that searched once and judged
@@ -327,24 +343,47 @@ npx convex env set POOL_ENABLED 1 --prod
 
 ---
 
-## Honest notes
+## What's true, and what isn't
 
-- **11 of the 12 seeded cameras are live and verified**; Rio de Janeiro is seeded
-  **inactive** because no working Brazilian camera could be verified — every candidate
-  served a JPEG last modified in 2022–2025. Mumbai was replaced by Bir Billing for the same
-  reason. Details are in `convex/seed.ts`.
-- **The chat panel is not an LLM.** It is local pattern-matching over the current feed.
-- **There is no viewer counter.** The prototype had one — a random walk that invented an
-  audience every two seconds — and it was removed on 2026-09-20 along with the "240 cameras"
-  beside it. The page now states what is true: 11 always-on cameras, 177 countries on demand.
-- **Timezones are approximate.** Seeded `tz` values are fixed UTC offsets (no DST), and the
-  country click derives one as `round(lng / 15)`, which is wrong for India, China, Spain and
-  others.
-- **The only public endpoints are** `director:getCut`, `director:getFeed`, `cameras:list`,
-  `countries:fetchCountry` and `agentmail:subscribe`. The last two are unauthenticated and
-  spend money, so they have format validation and global rate limits — but no real auth and
-  no double opt-in. `seed:run` and `cameras:setRef` are internal (still CLI-runnable).
-- **The headline is scraped text from a news search.** It is length-capped, stripped of
-  control characters, escaped before it is rendered, and passed to the model inside
-  `<headline>` tags labelled as untrusted context — but it is still third-party text
-  reaching a model prompt and a page.
+Eleven of the twelve seeded cameras are live and verified. Rio de Janeiro is seeded inactive
+because I could not find a Brazilian camera that proved itself — every candidate served a JPEG
+last modified somewhere between 2022 and 2025. Mumbai went the same way and was replaced by Bir
+Billing. The reasoning is written down next to each camera in `convex/seed.ts`.
+
+There is no viewer counter. The prototype had one, a random walk that invented an audience every
+two seconds, and I deleted it on 20 September along with the "240 cameras" beside it. The page
+now says what I can defend: 11 always-on cameras, 177 countries on demand.
+
+The chat is a real model call. It used to be regex matching over the feed, sitting behind a box
+that said "ask about what's on air", which was a claim the product couldn't keep. It now goes
+through the same provider layer as the director's scoring, and the model is shown the frame
+itself along with its age — and told not to call it live when it isn't. Ask about a
+ten-hour-old frame and it says so.
+
+Timezones are approximate. Seeded offsets are fixed UTC values with no DST, and the country
+click derives one as `round(lng / 15)`, which is wrong for India, China, Spain and plenty of
+others. It is good enough to say whether it is night there and not much more.
+
+Coverage is uneven, and the globe shows that rather than hiding it. 103 of 177 countries have a
+camera I can reach. A country is tinted teal only when a frame from it proved current within
+the hour, outlined when I hold a camera that hasn't proved itself lately, and left alone when I
+have nothing. Clicking an untinted country still works — it just has further to go.
+
+Some cameras lie about their own freshness, and two guards catch it. Image CDNs restamp
+`Last-Modified` as they re-serve an old frame, so a `Last-Modified` exactly equal to the
+response `Date` is treated as no timestamp at all. And the scorer reports whether the frame is
+daylight: if it says noon while the local clock says two in the morning, the frame stays on
+screen and loses its age. A spoofed age is not an age.
+
+The public endpoints are `director:getCut`, `director:getFeed`, `cameras:list`,
+`countries:start`, `chat:ask` and `agentmail:subscribe`. The last three spend money, so they
+carry format validation and global rate limits — but there is no real auth and no double
+opt-in. `seed:run` and `cameras:setRef` are internal, still runnable from the CLI.
+
+The headline is scraped text from a news search. It is length-capped, stripped of control
+characters, escaped before rendering, and passed to the model inside `<headline>` tags labelled
+as untrusted — but it is still third-party text reaching a prompt and a page.
+
+I built this with heavy AI assistance (Claude). The Convex backend, schema and pipelines were
+generated from a written build plan and then reviewed and wired by me. The integrations use
+public APIs, and every key lives in Convex environment variables — none are in this repo.
