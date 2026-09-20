@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="32" height="32" role="img" aria-labelledby="mw-fav">
+  <title id="mw-fav">Meanwhile</title>
+  <style>
+    .night { fill: #0d141e }
+    @media (prefers-color-scheme: dark) { .night { fill: #43e6d4 } }
+  </style>
+  <path class="night" d="M24 2A7 22 0 0 0 24 46A22 22 0 0 1 24 2Z"/>
+  <path d="M24 2A22 22 0 0 1 24 46A7 22 0 0 1 24 2Z" fill="#f5bd53"/>
+</svg>

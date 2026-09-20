@@ -1,0 +1,243 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "./fonts.css";
+@import "./tokens.css";
+@import "./wordmark.css";
+
+/* Tailwind's defaults are removed wholesale, so the only colours, shadows, blurs and curves
+   a class can reach are the ones DESIGN.md defines. There is no amber-400, no yellow, no
+   warning; no backdrop-blur-*; one shadow; one curve. */
+@theme inline {
+  --color-*: initial;
+  --shadow-*: initial;
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+  --text-shadow-*: initial;
+  --blur-*: initial;
+  --ease-*: initial;
+  --font-*: initial;
+  --radius-*: initial;
+  --text-*: initial;
+
+  --color-canvas: var(--canvas);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-live: var(--live);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+
+  /* The shadcn / AI Elements semantic names, pointed at Meanwhile roles. `accent` stays
+     ours (amber, on air only): shadcn uses that name for hover fills, so those classes were
+     rewritten out of the copied components rather than aliased here. */
+  --color-background: var(--canvas);
+  --color-foreground: var(--ink);
+  --color-card: var(--surface-1);
+  --color-card-foreground: var(--ink);
+  --color-popover: var(--surface-1);
+  --color-popover-foreground: var(--ink);
+  --color-primary: var(--surface-2);
+  --color-primary-foreground: var(--ink);
+  --color-secondary: var(--surface-2);
+  --color-secondary-foreground: var(--ink);
+  --color-muted: var(--surface-2);
+  --color-muted-foreground: var(--ink-muted);
+  --color-destructive: var(--danger);
+  --color-border: var(--line);
+  --color-input: var(--line);
+  --color-ring: var(--ink);
+
+  --font-display: var(--ff-display);
+  --font-sans: var(--ff-body);
+  --font-heading: var(--ff-display);
+  --font-place: var(--ff-place);
+  --font-mono: var(--ff-mono);
+
+  --text-xs: var(--fs-xs);
+  --text-xs--line-height: var(--lh-snug);
+  --text-sm: var(--fs-sm);
+  --text-sm--line-height: 1.5;
+  --text-base: var(--fs-base);
+  --text-base--line-height: var(--lh-normal);
+  --text-lg: var(--fs-lg);
+  --text-lg--line-height: var(--lh-snug);
+  --text-xl: var(--fs-xl);
+  --text-xl--line-height: var(--lh-snug);
+  --text-2xl: var(--fs-2xl);
+  --text-2xl--line-height: var(--lh-tight);
+  --text-3xl: var(--fs-3xl);
+  --text-3xl--line-height: var(--lh-tight);
+
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
+
+  --shadow-sheet: var(--shadow-sheet);
+  --ease-out-quint: var(--ease-out-quint);
+}
+
+@layer base {
+  html {
+    background-color: var(--canvas);
+    color: var(--ink);
+    font-family: var(--ff-body);
+    font-size: var(--fs-base);
+    line-height: var(--lh-normal);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-size-adjust: 100%;
+  }
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background-color: var(--canvas);
+  }
+  *,
+  ::before,
+  ::after {
+    border-color: var(--line);
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  button:not(:disabled):not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+  /* The global focus ring (C-01). A focus ring is not a claim: never teal, never amber. */
+  :focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--ink) 24%, transparent);
+    color: var(--ink);
+  }
+}
+
+@layer components {
+  /* Uppercase mono labels: DESIGN.md's +0.14em. Components that need .12em / .1em override. */
+  .mw-label {
+    font-family: var(--ff-mono);
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: var(--ls-label);
+    font-variant-numeric: tabular-nums;
+  }
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+  /* 44px hit area without changing the visual size (C-01, C-03, C-05, C-11). */
+  .hit-44 {
+    position: relative;
+  }
+  .hit-44::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    inset-block: min(0px, calc(50% - 22px));
+  }
+
+  /* C-04 / C-06 skeletons: a 1400ms opacity pulse, never a shimmer sweep, never a spinner. */
+  .mw-skeleton {
+    background: var(--surface-2);
+    border-radius: var(--r-sm);
+  }
+  .mw-skeleton[data-pulse="true"] {
+    animation: mw-pulse 1400ms ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mw-skeleton[data-pulse="true"] {
+      animation: none;
+    }
+  }
+}
+
+@keyframes mw-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* C-06 edge fades. The 48px masks are registered lengths so T-18 can animate a stop to 0 when
+   the rail reaches that end — the rail never implies content that isn't there. */
+@property --mw-fade-l {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@property --mw-fade-r {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@layer components {
+  .mw-rail-track {
+    --mw-fade-l: 48px;
+    --mw-fade-r: 48px;
+    mask-image: linear-gradient(90deg, transparent 0, #000 var(--mw-fade-l), #000 calc(100% - var(--mw-fade-r)), transparent 100%);
+    transition:
+      --mw-fade-l 200ms var(--ease-out-quint),
+      --mw-fade-r 200ms var(--ease-out-quint);
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+  }
+  .mw-rail-track::-webkit-scrollbar {
+    display: none;
+  }
+  .mw-rail-track[data-at-start="true"] {
+    --mw-fade-l: 0px;
+  }
+  .mw-rail-track[data-at-end="true"] {
+    --mw-fade-r: 0px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mw-rail-track {
+      transition: none;
+    }
+  }
+}
+
+/* C-02 on-air marker: a 6px amber dot with a single 18px amber ring — the only amber on the
+   globe. globe.gl centres the element on the lat/lon; occlusion sets its opacity. */
+@layer components {
+  .mw-onair-marker {
+    position: relative;
+    width: 18px;
+    height: 18px;
+    pointer-events: none;
+    transition: opacity 150ms var(--ease-out-quint);
+  }
+  .mw-onair-marker::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 1px solid var(--accent);
+    border-radius: 50%;
+  }
+  .mw-onair-marker::after {
+    content: "";
+    position: absolute;
+    left: 6px;
+    top: 6px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+}

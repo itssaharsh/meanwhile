@@ -1,0 +1,10 @@
+/* The four font roles, self-hosted. Static cuts, so the family names are exactly the ones
+   DESIGN.md names ("Funnel Display", not "Funnel Display Variable"). Every subset is declared
+   with a unicode-range and only downloads when used; Funnel Display's latin file carries the
+   wordmark's dotless ı (U+0131). */
+@import "@fontsource/funnel-display/600.css";
+@import "@fontsource/funnel-sans/400.css";
+@import "@fontsource/funnel-sans/500.css";
+@import "@fontsource/funnel-sans/600.css";
+@import "@fontsource/newsreader/600.css";
+@import "@fontsource/space-mono/400.css";

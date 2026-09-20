@@ -1,0 +1,31 @@
+/* Funnel Display, upm 1200: cap 810 (.675em) · x-height 600 (.5em)
+   · tittle 120sq centred (140, 750) · 'i'/'ı' advance 280 · 'M' LSB 104 (.0867em) */
+
+.mw-wordmark{
+  font-family:"Funnel Display", ui-sans-serif, system-ui, sans-serif;
+  font-weight:600; font-size:var(--mw-size, 64px);
+  letter-spacing:-0.03em; line-height:1; white-space:nowrap;
+  color:var(--ink, #e8eef4); font-kerning:normal;
+}
+/* the dotless-i cell: height 1em + line-height 1em puts the baseline .875em below the box top */
+.mw-wordmark--marked .mw-i{
+  position:relative; display:inline-block;
+  width:.2333em;   /* 280/1200, the natural 'ı' advance */
+  height:1em; line-height:1em; letter-spacing:0;
+}
+.mw-wordmark--marked .mw-tittle{
+  position:absolute;
+  left:.1167em;              /* 140/1200, the stem centre */
+  top:.25em;                 /* .875em baseline − .625em tittle centre */
+  width:.24em; height:.24em; /* 48-grid box; disc is 36/48 = .18em */
+  transform:translate(-50%,-50%); display:block;
+}
+/* below ~28px the teal crescent dies — ship a solid-amber .mw-tittle variant under that size */
+
+.mw-lockup{ display:inline-flex; align-items:center; text-decoration:none; font-size:var(--mw-size, 64px); }
+.mw-lockup .mw-mark{
+  flex:none; width:1.17em; height:1.17em;  /* disc = 36/48 of box = .8775em = 1.3 × cap */
+  margin-right:.2058em;                     /* optical gap − box padding − 'M' LSB */
+  margin-top:.25em;                         /* drops the disc centre onto the x-height middle */
+}
+.mw-lockup .mw-wordmark{ font-size:1em; line-height:1; }

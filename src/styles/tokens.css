@@ -1,0 +1,77 @@
+/* Meanwhile — the DESIGN.md role tokens, emitted exactly as specified.
+ *
+ * Colour is a claim:
+ *   --accent (amber)  ON AIR. The director chose this frame. Nothing else is ever amber:
+ *                     not hover, not focus, not links, not warnings, not a logo flourish.
+ *   --live   (teal)   VERIFIED LIVE. We read the source's own timestamp and it is under 3 h old.
+ *   --ink-muted       Secondary text AND the unverified state. Staleness is the absence of teal.
+ *
+ * There is deliberately no --warning token. Grey plus a sentence is the warning.
+ */
+:root {
+  color-scheme: dark;
+
+  /* colors */
+  --canvas: #080b11;      /* page ground; never pure black */
+  --surface-1: #10151d;   /* dock, cards, sheets */
+  --surface-2: #18202a;   /* raised rows, user chat bubbles, hover fills */
+  --line: #232d3a;        /* all 1px separators and idle borders */
+  --line-strong: #33404f; /* hover borders on interactive surfaces only */
+  --ink: #e8eef4;         /* primary text, 15.8:1 on canvas */
+  --ink-muted: #94a3b3;   /* secondary text and the unverified state, 7.1:1 on canvas */
+  --accent: #f5bd53;      /* ON AIR only */
+  --accent-ink: #1a1204;  /* text on amber, 11.4:1 */
+  --live: #43e6d4;        /* VERIFIED-FRESH only */
+  --success: #5fd39a;     /* delivery confirmed; nothing else */
+  --danger: #ff6f60;      /* destructive or failed; never for staleness */
+
+  /* typography: four roles, and the fourth is the point */
+  --ff-display: "Funnel Display", ui-sans-serif, system-ui, sans-serif; /* 600: headings, ident, big numerals */
+  --ff-body: "Funnel Sans", ui-sans-serif, system-ui, sans-serif;       /* 400/500: all running text */
+  --ff-place: "Newsreader", Georgia, serif;                              /* 600: place names only */
+  --ff-mono: "Space Mono", ui-monospace, Menlo, monospace;               /* 400: scores, times, ages, ids, stages */
+
+  --fs-xs: 11px;
+  --fs-sm: 13px;
+  --fs-base: 15px;
+  --fs-lg: 18px;
+  --fs-xl: 24px;
+  --fs-2xl: 32px;
+  --fs-3xl: 44px;
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+
+  --lh-tight: 1.1;
+  --lh-snug: 1.3;
+  --lh-normal: 1.6;
+
+  --ls-display: -0.03em;
+  --ls-normal: 0;
+  --ls-label: 0.14em;
+
+  /* shapes: 2px chips and tags · 6px buttons, inputs, frames · 12px the mobile sheet */
+  --r-sm: 2px;
+  --r-md: 6px;
+  --r-lg: 12px;
+
+  --space: 4px;
+
+  /* layout (UI-SPEC §4) */
+  --topbar-h: 56px;
+  --dock-w: 380px;
+  --rail-h: 132px;
+
+  /* the one shadow in the product: under the mobile sheet, where a real edge lifts */
+  --shadow-sheet: 0 -8px 32px -8px rgb(0 0 0 / 0.55);
+
+  /* motion: every choreography row uses E, except the rail re-sort (the one spring) */
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (max-width: 639px) {
+  :root {
+    --rail-h: 96px; /* the peek strip welded to the sheet's top edge */
+  }
+}

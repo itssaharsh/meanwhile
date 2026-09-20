@@ -1,0 +1,156 @@
+{
+  "_comment": "Demo fixtures. `cut` MUST be the highest-scored entry in `feed` — that is the director rule, and scripts/verify.mjs asserts it against convex/rank.js. `headline` stands in for the Firecrawl news search; the URLs are example.org on purpose, so nothing here looks like a real citation.",
+  "cut": {
+    "camera": {
+      "name": "Tromsø",
+      "country": "Norway",
+      "lat": 69.65,
+      "lng": 18.96,
+      "tz": 1
+    },
+    "localTime": "22:10",
+    "weather": "-3°C · clear",
+    "score": 9.6,
+    "caption": "The sky just turned green over the fjord — nobody down there is talking.",
+    "tags": [
+      "aurora",
+      "fjord",
+      "mountains"
+    ],
+    "url": null,
+    "isDay": false,
+    "headline": "Tromsø braces for first real aurora season crowds as hotels report full October",
+    "headlineUrl": "https://example.org/tromso"
+  },
+  "feed": [
+    {
+      "camera": {
+        "name": "Tromsø",
+        "country": "Norway",
+        "lat": 69.65,
+        "lng": 18.96,
+        "tz": 1
+      },
+      "localTime": "22:10",
+      "weather": "-3°C · clear",
+      "score": 9.6,
+      "caption": "The sky just turned green over the fjord.",
+      "tags": [
+        "aurora",
+        "fjord",
+        "mountains"
+      ],
+      "url": null,
+      "isDay": false,
+      "headline": "Tromsø braces for first real aurora season crowds as hotels report full October",
+      "headlineUrl": "https://example.org/tromso"
+    },
+    {
+      "camera": {
+        "name": "Santoríni",
+        "country": "Greece",
+        "lat": 36.39,
+        "lng": 25.46,
+        "tz": 3
+      },
+      "localTime": "19:50",
+      "weather": "21°C · clear",
+      "score": 9.4,
+      "caption": "The caldera turns pink; the whole island is facing west.",
+      "tags": [
+        "caldera",
+        "sea",
+        "old town"
+      ],
+      "url": null,
+      "isDay": true,
+      "headline": "Santorini caps daily cruise arrivals at 8,000 as autumn season winds down",
+      "headlineUrl": "https://example.org/santorini"
+    },
+    {
+      "camera": {
+        "name": "Reykjavík",
+        "country": "Iceland",
+        "lat": 64.15,
+        "lng": -21.94,
+        "tz": 0
+      },
+      "localTime": "21:40",
+      "weather": "4°C · clear",
+      "score": 9.1,
+      "caption": "Golden hour over the old harbour — not one boat has moved in an hour.",
+      "tags": [
+        "harbour",
+        "boats",
+        "golden hour"
+      ],
+      "url": null,
+      "isDay": true,
+      "headline": "Reykjavík harbour works extended through winter, city council confirms",
+      "headlineUrl": "https://example.org/reykjavik"
+    },
+    {
+      "camera": {
+        "name": "Kyoto",
+        "country": "Japan",
+        "lat": 35.01,
+        "lng": 135.77,
+        "tz": 9
+      },
+      "localTime": "05:40",
+      "weather": "16°C · fog",
+      "score": 9.0,
+      "caption": "Fog sits low over the temple roofs; a single lantern is still lit.",
+      "tags": [
+        "temple",
+        "rooftops",
+        "lantern"
+      ],
+      "url": null,
+      "isDay": false,
+      "headline": "Kyoto expects early maple colour after a cool week, tourism board says",
+      "headlineUrl": "https://example.org/kyoto"
+    },
+    {
+      "camera": {
+        "name": "Taipei",
+        "country": "Taiwan",
+        "lat": 25.03,
+        "lng": 121.56,
+        "tz": 8
+      },
+      "localTime": "20:40",
+      "weather": "28°C · humid",
+      "score": 8.7,
+      "caption": "The night market flickers awake — steam, scooters, the first bowl of noodles.",
+      "tags": [
+        "night market",
+        "neon",
+        "cityscape"
+      ],
+      "url": null,
+      "isDay": false,
+      "headline": "Taipei night markets extend weekend hours through the holiday",
+      "headlineUrl": "https://example.org/taipei"
+    }
+  ],
+  "countryDemo": {
+    "place": "Japan",
+    "country": "Japan",
+    "tz": 9,
+    "lat": 35.01,
+    "lng": 135.77,
+    "localTime": "05:41",
+    "weather": "16°C · fog",
+    "isDay": false,
+    "imageUrl": null,
+    "caption": "Pre-dawn mist over Kyoto — a single lantern still lit.",
+    "tags": [
+      "temple",
+      "mist",
+      "lantern"
+    ],
+    "headline": "Japan issues autumn typhoon advisory for the Kansai region",
+    "headlineUrl": "https://example.org/japan"
+  }
+}
