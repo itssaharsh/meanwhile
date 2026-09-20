@@ -10,8 +10,11 @@ const crons = cronJobs();
 // free tier inside two hours. 20 minutes is ~864/day and still feels live; a demo can
 // always force an instant refresh with `npx convex run pool:refreshAll`.
 //
-// cronRefresh is a no-op until POOL_ENABLED=1, so pushing this code costs nothing.
-crons.interval("refresh camera pool", { minutes: 20 }, internal.pool.cronRefresh, {});
+// cronRefresh is a no-op until POOL_ENABLED=1, so pushing this code costs nothing. It ticks
+// every 10 minutes and refuses to do anything until POOL_INTERVAL_MINUTES has elapsed — the
+// interval here is compiled in and shared by every deployment, and dev and prod want different
+// paces out of different quotas.
+crons.interval("refresh camera pool", { minutes: 10 }, internal.pool.cronRefresh, {});
 
 // Nothing deleted snapshots or their stored images before, so both grew without bound.
 crons.interval("prune old snapshots", { hours: 6 }, internal.cut.prune, {});

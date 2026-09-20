@@ -58,6 +58,8 @@ export function toSnapshot(story: NonNullable<ReturnType<typeof useQuery<typeof 
 
 export type CountryFetch = {
   start: (country: string, lat: number, lng: number) => void;
+  /** Drop the current fetch — what "back to air" does to the Story tab. */
+  reset: () => void;
   country: string | null;
   row: FetchRow | null;
   /** Set once the row settles: what the ladder ended with. */
@@ -137,8 +139,12 @@ export function useCountryFetch(): CountryFetch {
         : ((shown!.outcome ?? "empty") as "live" | "undated" | "cached" | "empty")
       : null;
 
+  /** Drop the current country fetch — what "back to air" does to the Story tab. */
+  const reset = useCallback(() => setTarget(null), []);
+
   return {
     start,
+    reset,
     country: target?.country ?? null,
     row,
     outcome,

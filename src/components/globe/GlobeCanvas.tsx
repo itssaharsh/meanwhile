@@ -70,6 +70,10 @@ export type GlobeProps = {
    *  honest middle tier: we know where to look, we are not claiming it is live. A --ink-muted
    *  edge, never teal — teal is a claim about freshness and this makes none. */
   indexed?: ReadonlySet<string> | null;
+  /** A point to fly to. Changing it starts a flight — 400ms for a country click, 640ms for a
+   *  cut (UI-SPEC C-02). Ignored if the viewer has had their hands on the planet in the last
+   *  2.5 seconds: the director never yanks the camera out of someone's grip. */
+  flyTo?: { lat: number; lng: number; ms?: number } | null;
   /** /_kit: pin a hover state on a country. */
   forceHover?: string | null;
   pov?: { lat: number; lng: number; altitude?: number };
@@ -89,6 +93,7 @@ export default function GlobeCanvas({
   active = null,
   covered = null,
   indexed = null,
+  flyTo = null,
   forceHover = null,
   pov,
   reduced = false,
@@ -110,6 +115,8 @@ export default function GlobeCanvas({
   const [hover, setHover] = useState<string | null>(null);
   const [pressed, setPressed] = useState<string | null>(null);
   const [pointer, setPointer] = useState<{ x: number; y: number } | null>(null);
+  /** When the viewer last grabbed the globe, for the flight guard. */
+  const handsOn = useRef(0);
   const [pinned, setPinned] = useState<{ x: number; y: number } | null>(null);
 
   const colors = useMemo(
@@ -220,6 +227,7 @@ export default function GlobeCanvas({
     let resume: ReturnType<typeof setTimeout> | undefined;
     const onStart = () => {
       controls.autoRotate = false;
+      handsOn.current = Date.now();
       clearTimeout(resume);
     };
     const onEnd = () => {
@@ -235,6 +243,15 @@ export default function GlobeCanvas({
     };
     // pov is re-applied only when the kit changes it
   }, [size.w > 0, small, reduced, pov?.lat, pov?.lng, pov?.altitude]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // The flight. A cut or a country click moves the camera; a viewer's hand overrides both.
+  useEffect(() => {
+    const g = globeRef.current;
+    if (!g || !flyTo || size.w === 0) return;
+    if (Date.now() - handsOn.current < 2500) return;
+    const altitude = pov?.altitude ?? (small ? 2.6 : 2.2);
+    g.pointOfView({ lat: flyTo.lat, lng: flyTo.lng, altitude }, reduced ? 0 : (flyTo.ms ?? 640));
+  }, [flyTo?.lat, flyTo?.lng, flyTo?.ms, size.w > 0, small, reduced, pov?.altitude]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // /_kit: pin the hover label on a country's centroid
   useEffect(() => {

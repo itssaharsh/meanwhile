@@ -46,6 +46,10 @@ export const refreshAll = internalAction({
 
 // What the cron calls. Off by default so that pushing this code — which happens before
 // any key is set — never starts spending money or free-tier credit on its own.
+/** How often the pool refreshes when POOL_INTERVAL_MINUTES is unset — the pace prod has been
+ *  running at all along, so an existing deployment's behaviour does not change under it. */
+const DEFAULT_INTERVAL_MINUTES = 20;
+
 export const cronRefresh = internalAction({
   args: {},
   handler: async (ctx): Promise<void> => {
@@ -55,6 +59,14 @@ export const cronRefresh = internalAction({
       );
       return;
     }
+    // The cron's own interval is compiled into crons.ts and is therefore the same on every
+    // deployment. How often the channel actually refreshes is a per-deployment decision — dev
+    // does not need prod's pace, and each has its own vision quota — so the tick is fast and
+    // this gate decides whether it does anything. One refresh per window, counted.
+    const minutes = Number(envOrNull("POOL_INTERVAL_MINUTES") ?? DEFAULT_INTERVAL_MINUTES);
+    const windowMs = (Number.isFinite(minutes) && minutes > 0 ? minutes : DEFAULT_INTERVAL_MINUTES) * 60_000;
+    const gate = await ctx.runMutation(internal.limits.take, { key: "pool:interval", limit: 1, windowMs });
+    if (!gate.ok) return;
     await ctx.runAction(internal.pool.refreshAll, {});
   },
 });

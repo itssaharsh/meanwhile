@@ -754,8 +754,15 @@ export const row = internalQuery({
   handler: async (ctx, { fetchId }) => await ctx.db.get(fetchId),
 });
 
-/** Three countries whose latest frame is verified right now, nearest to the click first —
- *  the offer an empty state makes. Never padded with anything unverified. */
+/** The window a chip may call "verified live". The freshness ladder reserves that phrase for
+ *  under an hour — 60 min to 3 h is "Verified", which is a weaker claim — and the chip's own
+ *  label says live, so the offer has to mean it. An empty state offering a camera last seen
+ *  two hours and fifty-eight minutes ago is not offering something working this minute. */
+const CHIP_LIVE_MS = 60 * 60 * 1000;
+
+/** Three countries whose latest frame proved itself within the hour, nearest to the click
+ *  first — the offer an empty state makes. Never padded with anything older, and never with
+ *  anything unverified: fewer chips is honest, a stale chip is not. */
 export const verifiedNow = query({
   args: { exclude: v.optional(v.string()), lat: v.optional(v.number()), lng: v.optional(v.number()) },
   handler: async (ctx, { exclude, lat, lng }) => {
@@ -778,12 +785,12 @@ export const verifiedNow = query({
           .order("desc")
           .take(1)
       )[0];
-      if (snap?.capturedAt != null && now - snap.capturedAt <= VERIFIED_MS) {
+      if (snap?.capturedAt != null && now - snap.capturedAt <= CHIP_LIVE_MS) {
         offer(polygonName(cam.country), snap.capturedAt, cam.lat, cam.lng);
       }
     }
     for (const s of await ctx.db.query("stories").withIndex("by_at").order("desc").take(60)) {
-      if (s.capturedAt != null && now - s.capturedAt <= VERIFIED_MS) offer(s.country, s.capturedAt, s.lat, s.lng);
+      if (s.capturedAt != null && now - s.capturedAt <= CHIP_LIVE_MS) offer(s.country, s.capturedAt, s.lat, s.lng);
     }
 
     const rows = [...best.values()];
