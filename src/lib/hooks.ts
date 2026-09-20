@@ -20,3 +20,17 @@ export function useReduced(force?: boolean): boolean {
   const os = useReducedMotion();
   return force ?? !!os;
 }
+
+/** True below the given width. Subscribes to the media query rather than to resize, so it
+ *  fires once per breakpoint crossing instead of on every frame of a drag. */
+export function useNarrow(maxWidth = 639): boolean {
+  const [narrow, setNarrow] = useState(() => typeof window !== "undefined" && window.matchMedia(`(max-width: ${maxWidth}px)`).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${maxWidth}px)`);
+    const on = () => setNarrow(mq.matches);
+    mq.addEventListener("change", on);
+    on();
+    return () => mq.removeEventListener("change", on);
+  }, [maxWidth]);
+  return narrow;
+}

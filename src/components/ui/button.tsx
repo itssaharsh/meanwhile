@@ -7,7 +7,10 @@ import { cn } from "cn"
 // and was corrected at the author's direction — primary is --ink on --canvas instead.
 // Colour changes over 150ms and the press scale over 120ms; nothing else transitions.
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap border font-sans select-none outline-none " +
+  // hit-44 on every button: the app's root font-size is 15px, so rem-based sizes land at
+  // 93.75% of their name — h-11 is 41.25px, not 44. hit-44 is written in pixels and extends
+  // the touch target without moving anything on screen.
+  "hit-44 inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap border font-sans select-none outline-none " +
     "[transition:background-color_150ms_var(--ease-out-quint),border-color_150ms_var(--ease-out-quint),color_150ms_var(--ease-out-quint),transform_120ms_var(--ease-out-quint)] " +
     "active:not-aria-disabled:scale-[.985] " +
     "disabled:cursor-not-allowed disabled:opacity-45 aria-disabled:cursor-not-allowed aria-disabled:opacity-45 " +

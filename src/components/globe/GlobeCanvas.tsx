@@ -51,6 +51,14 @@ const FRAGMENT = /* glsl */ `
   }
 `;
 
+/** A 1x1 texture, for a sampler that must be valid before the real image exists. */
+function pixel(r: number, g: number, b: number): THREE.DataTexture {
+  const t = new THREE.DataTexture(new Uint8Array([r, g, b, 255]), 1, 1, THREE.RGBAFormat);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.needsUpdate = true;
+  return t;
+}
+
 /** A token as rgba(), so three.js can take it. One palette: DESIGN.md's, read at runtime. */
 function tokenRgba(name: string, alpha: number): string {
   const hex = getComputedStyle(document.documentElement).getPropertyValue(name).trim() || "#e8eef4";
@@ -144,8 +152,10 @@ export default function GlobeCanvas({
     () =>
       new THREE.ShaderMaterial({
         uniforms: {
-          dayTexture: { value: null },
-          nightTexture: { value: null },
+          // 1x1 stand-ins: a valid sampler from the first frame, so nothing has to wait for a
+          // JPEG before the globe can be drawn at all.
+          dayTexture: { value: pixel(16, 32, 56) },
+          nightTexture: { value: pixel(4, 7, 13) },
           sunDir: { value: new THREE.Vector3(0, 0, 1) },
         },
         vertexShader: VERTEX,
@@ -163,21 +173,44 @@ export default function GlobeCanvas({
     return () => ro.disconnect();
   }, []);
 
-  // textures: the slate stays until both are decoded, then fades out over 320ms
+  // Textures, smallest first.
+  //
+  // The full pair is 4096x2048 and 2.1MB, and gating the planet on it meant a cold load on a
+  // phone sat on ACQUIRING PICTURE for thirty seconds — measured, not guessed. A 1024x512 pair
+  // (84KB together) arrives in a second or two and is enough to recognise the Earth; the full
+  // resolution swaps in behind it when it lands, and nobody sees the moment it does. Both
+  // uniforms start as a 1x1 pixel so the shader is valid from the very first frame.
   useEffect(() => {
     const loader = new THREE.TextureLoader();
     let cancelled = false;
-    Promise.all([loader.loadAsync("/earth/day.jpg"), loader.loadAsync("/earth/night.jpg")]).then(([day, night]) => {
-      if (cancelled) return;
-      day.colorSpace = THREE.SRGBColorSpace;
-      night.colorSpace = THREE.SRGBColorSpace;
-      material.uniforms.dayTexture.value = day;
-      material.uniforms.nightTexture.value = night;
+    let lifted = false;
+
+    const put = (which: "dayTexture" | "nightTexture", tex: THREE.Texture) => {
+      tex.colorSpace = THREE.SRGBColorSpace;
+      material.uniforms[which].value = tex;
       material.needsUpdate = true;
-      // Ready once a frame with the textures has actually been drawn (shader compile included),
-      // not merely when the JPEGs decode — otherwise the slate leaves before the planet arrives.
+      if (lifted) return;
+      lifted = true;
+      // Ready once a frame carrying a real texture has actually been drawn — shader compile
+      // included — not merely when the JPEG decodes.
       requestAnimationFrame(() => requestAnimationFrame(() => !cancelled && setReady(true)));
+    };
+
+    // Strictly in sequence. Requesting all four at once let 2.1MB of full-resolution JPEG
+    // compete with the 84KB pair for the same pipe, and on a throttled connection the small
+    // ones never won — the slate stayed up past forty seconds. The full pair is not asked for
+    // until the small one is on screen.
+    loader.loadAsync("/earth/day-lo.jpg").then((t) => {
+      if (cancelled) return;
+      put("dayTexture", t);
+      loader.loadAsync("/earth/night-lo.jpg").then((n) => {
+        if (cancelled) return;
+        put("nightTexture", n);
+        loader.loadAsync("/earth/day.jpg").then((d) => !cancelled && put("dayTexture", d));
+        loader.loadAsync("/earth/night.jpg").then((n2) => !cancelled && put("nightTexture", n2));
+      });
     });
+
     return () => {
       cancelled = true;
     };

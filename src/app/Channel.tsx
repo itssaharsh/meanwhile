@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { cn } from "@/lib/utils";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { convex } from "@/lib/convex";
-import { useNow } from "@/lib/hooks";
+import { useNow, useNarrow } from "@/lib/hooks";
 import { Globe } from "@/components/globe";
 import { TopBar } from "@/components/TopBar";
 import { FeedRail } from "@/components/FeedRail";
@@ -13,12 +14,19 @@ import { ADDED } from "@/lib/copy";
 import { useChannel, DEMO } from "./useChannel";
 import { useCountryFetch } from "./useCountryFetch";
 import { StoryPanel } from "./StoryPanel";
-import { AskPanel } from "@/components/AskPanel";
+
 import { useAsk } from "./useAsk";
 import { useSubscribe } from "./useSubscribe";
 import { SubscribeSheet } from "@/components/SubscribeSheet";
 import type { Snapshot } from "@/lib/types";
 import COUNTRIES from "@/data/countries.json";
+
+// The Ask panel renders the answer through AI Elements' markdown component, which drags in a
+// syntax highlighter, a diagram engine and a maths typesetter — a megabyte of JavaScript, in
+// the shell, to render one sentence with a place chip in it. Split out so it is fetched when
+// someone opens the Ask tab and not before. The globe and the TopBar are NOT inside this
+// boundary; only the panel is.
+const AskPanel = lazy(() => import("@/components/AskPanel").then((m) => ({ default: m.AskPanel })));
 
 /** UI-SPEC C-02: a country click flies for 400ms, a cut for 640ms. */
 const FLY_COUNTRY_MS = 400;
@@ -46,6 +54,9 @@ export function Channel({ children }: { children?: ReactNode }) {
   const covered = useMemo(() => (coveredList ? new Set(coveredList) : null), [coveredList]);
   const indexed = useMemo(() => (indexedList ? new Set(indexedList) : null), [indexedList]);
 
+  const narrow = useNarrow();
+  /** Mobile only: which of [0, 62, 92] the sheet is resting at. */
+  const [snap, setSnap] = useState<0 | 62 | 92>(0);
   const [dockOpen, setDockOpen] = useState(false);
   const [tab, setTab] = useState<DockTab>("story");
   const [picked, setPicked] = useState<{ name: string; lat: number; lng: number } | null>(null);
@@ -65,6 +76,7 @@ export function Channel({ children }: { children?: ReactNode }) {
       setStoryOverride(null);
       // T-01: the dock opens before any network call. The stages fill it in.
       setDockOpen(true);
+      setSnap(62);
       setTab("story");
       setFlyTo({ lat, lng, ms: FLY_COUNTRY_MS });
       country.start(name, lat, lng);
@@ -74,6 +86,7 @@ export function Channel({ children }: { children?: ReactNode }) {
 
   const closeDock = useCallback(() => {
     setDockOpen(false);
+    setSnap(0);
     // Focus goes back where it came from; it never lands on the body.
     opener.current?.focus?.();
   }, []);
@@ -177,13 +190,35 @@ export function Channel({ children }: { children?: ReactNode }) {
 
   const verified = country.outcome === "live" || country.outcome === "cached";
 
+  const railEl = (
+    <FeedRail
+      items={feed}
+      onAirId={onAir?.snapshotId ?? null}
+      now={now}
+      state={railState}
+      flashId={flashId}
+      onOpen={(s) => {
+        opener.current = (document.activeElement as HTMLElement) ?? null;
+        setPicked(null);
+        country.reset();
+        setStoryOverride(s);
+        setTab("story");
+        setDockOpen(true);
+        setSnap(62);
+        setFlyTo({ lat: s.place.lat, lng: s.place.lon, ms: FLY_COUNTRY_MS });
+      }}
+    />
+  );
+
   return (
     <div className="fixed inset-0 flex flex-col bg-canvas">
-      <TopBar state={topBarState} onAir={onAir} previous={previous} now={now} onAsk={() => { setTab("ask"); setDockOpen(true); }} onSend={mail.show} />
+      <TopBar state={topBarState} onAir={onAir} previous={previous} now={now} onAsk={() => { setTab("ask"); setDockOpen(true); setSnap(62); }} onSend={mail.show} />
 
       <div className="relative flex min-h-0 flex-1">
-        {/* The planet, always mounted, always turning. */}
-        <div className="relative min-h-0 flex-1">
+        {/* The planet, always mounted, always turning. On mobile its region is pinned to 45vh
+            and the sheet travels OVER it — the canvas never reflows when the sheet moves, so
+            the globe never restarts mid-drag. */}
+        <div className={cn("relative", narrow ? "h-[45vh] shrink-0" : "min-h-0 flex-1")}>
           <Globe
             onAir={onAir ? { lat: onAir.place.lat, lon: onAir.place.lon, snapshotId: onAir.snapshotId } : null}
             active={picked ? { name: picked.name, verified } : null}
@@ -200,10 +235,18 @@ export function Channel({ children }: { children?: ReactNode }) {
           open={dockOpen}
           tab={tab}
           onTabChange={setTab}
+          layout={narrow ? "sheet" : "side"}
+          snap={narrow ? snap : undefined}
+          onSnapChange={(v) => {
+            setSnap(v);
+            setDockOpen(v !== 0);
+          }}
+          railStrip={narrow ? railEl : undefined}
           returnTo={returnTo}
           cutPulse={cutPulse}
           story={storyNode}
           ask={
+            <Suspense fallback={<div className="min-h-0 flex-1" />}>
             <AskPanel
               state={chat.state}
               question={chat.question}
@@ -218,6 +261,7 @@ export function Channel({ children }: { children?: ReactNode }) {
               onStop={chat.stop}
               onPlace={goToPlace}
             />
+            </Suspense>
           }
           onClose={closeDock}
           onReturn={returnToAir}
@@ -235,22 +279,8 @@ export function Channel({ children }: { children?: ReactNode }) {
         onDone={mail.close}
       />
 
-      <FeedRail
-        items={feed}
-        onAirId={onAir?.snapshotId ?? null}
-        now={now}
-        state={railState}
-        flashId={flashId}
-        onOpen={(s) => {
-          opener.current = (document.activeElement as HTMLElement) ?? null;
-          setPicked(null);
-          country.reset();
-          setStoryOverride(s);
-          setTab("story");
-          setDockOpen(true);
-          setFlyTo({ lat: s.place.lat, lng: s.place.lon, ms: FLY_COUNTRY_MS });
-        }}
-      />
+      {!narrow && railEl}
+
     </div>
   );
 }

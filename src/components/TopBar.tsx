@@ -249,7 +249,7 @@ export function TopBar({
           onClick={onAsk}
           aria-label={COPY.topBar.askAria}
           title={COPY.topBar.ask}
-          className="max-[900px]:size-10 max-[900px]:px-0 max-sm:size-11"
+          className="hit-44 max-[900px]:size-[44px] max-[900px]:px-0"
         >
           <MessageCircle aria-hidden="true" className="hidden size-[18px] max-[900px]:block" strokeWidth={1.6} />
           <span className="max-[900px]:hidden">{COPY.topBar.ask}</span>
@@ -263,7 +263,7 @@ export function TopBar({
           aria-describedby={sendDisabled ? disabledId : undefined}
           title={sendDisabled ? COPY.rail.firstRunTitle : COPY.topBar.send}
           focusableWhenDisabled
-          className="max-[900px]:size-10 max-[900px]:px-0 max-sm:size-11"
+          className="hit-44 max-[900px]:size-[44px] max-[900px]:px-0"
         >
           <EnvelopeArc aria-hidden="true" size={18} className="hidden max-[900px]:block" />
           <span className="max-[900px]:hidden">{COPY.topBar.send}</span>
