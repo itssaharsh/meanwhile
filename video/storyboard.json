@@ -1,0 +1,336 @@
+{
+ "project": {
+  "name": "Meanwhile",
+  "url": "https://honorable-opossum-473.convex.site/",
+  "target_seconds": 150,
+  "max_seconds": 180
+ },
+ "style": {
+  "voice": "af_heart",
+  "speed": 0.86,
+  "captions": true,
+  "music": "calm",
+  "sfx": true,
+  "gpu": true,
+  "fps": 15,
+  "viewport": [
+   1280,
+   720
+  ],
+  "dsf": 2,
+  "color_scheme": "dark",
+  "palette": {
+   "bg": [
+    "#070b13",
+    "#10233f",
+    "#1d3a66"
+   ],
+   "accent": "#f5bd53",
+   "site_bg": "#080b11",
+   "chrome": "dark",
+   "font": "Inter",
+   "display_font": "Funnel Display"
+  }
+ },
+ "pronounce": {
+  "Meanwhile": "Meanwhile",
+  "Convex": "Con-vex",
+  "Troms\u00f8": "Trom-soh",
+  "Santor\u00edni": "San-toh-ree-nee",
+  "webcams": "web cams",
+  "Last-Modified": "last modified"
+ },
+ "setup": [],
+ "scenes": [
+  {
+   "id": "hook",
+   "type": "clip",
+   "from": "cut",
+   "offset": -1.2,
+   "dur": 8.0,
+   "title_hold": 2.4,
+   "say": "This webcam says it is live, right now. [[0.3]] Most of them are lying, and there is no way to tell just by looking at one.",
+   "card": {
+    "layout": "title",
+    "kicker": "Meanwhile",
+    "title": "Every live webcam says it's live.",
+    "sub": "Almost none of them prove it."
+   }
+  },
+  {
+   "id": "problem",
+   "type": "card",
+   "say": "A picture taken three hours ago can swear it is two minutes old. The image host stamps a fresh time on every single request, so the clock keeps moving while the photograph sits still. Nobody checks, because checking is boring.",
+   "card": {
+    "layout": "stat",
+    "kicker": "The problem",
+    "value": "3 hours",
+    "label": "old \u2014 and the timestamp said two minutes",
+    "sub": "A CDN restamps Last-Modified on every request. The lie is invisible."
+   }
+  },
+  {
+   "id": "landing",
+   "type": "live",
+   "lead": 0.5,
+   "say": "Meanwhile is a live channel whose only programming is the planet. An AI director watches real public cameras around the world and puts the best one on air.",
+   "actions": [
+    {
+     "do": "wait",
+     "for": "text=Start watching",
+     "timeout": 60000
+    },
+    {
+     "do": "pause",
+     "ms": 400
+    },
+    {
+     "do": "camera",
+     "focus": "[role=dialog] [data-snapshot-id]",
+     "zoom": 1.35,
+     "at": "cameras"
+    },
+    {
+     "do": "pause",
+     "ms": 400
+    }
+   ]
+  },
+  {
+   "id": "enter",
+   "type": "live",
+   "say": "The frame on the right is genuinely on air this second. It changes while you read this page. Nothing here is a screenshot or a mock.",
+   "actions": [
+    {
+     "do": "click",
+     "sel": "text=Start watching",
+     "at": "air",
+     "zoom": "out"
+    },
+    {
+     "do": "wait",
+     "for": 1200
+    },
+    {
+     "do": "pause",
+     "ms": 400
+    }
+   ]
+  },
+  {
+   "id": "cut",
+   "type": "live",
+   "say": "Behind it the globe is turning, and that line between day and night is the real one, computed from the sun. But the part that actually matters is smaller than the planet.",
+   "actions": [
+    {
+     "do": "pause",
+     "ms": 400
+    },
+    {
+     "do": "mark",
+     "name": "cut"
+    },
+    {
+     "do": "camera",
+     "focus": "header",
+     "zoom": 1.5,
+     "at": "matters"
+    },
+    {
+     "do": "pause",
+     "ms": 400
+    }
+   ]
+  },
+  {
+   "id": "fresh",
+   "type": "live",
+   "say": "Teal means we read this frame's age from the source, and then checked it against where the sun should be at that longitude. When those two disagree, we throw the timestamp away and say so, in grey, instead of quietly rounding it down.",
+   "actions": [
+    {
+     "do": "click",
+     "sel": "[data-rail-item]",
+     "at": "read",
+     "zoom": 1.25
+    },
+    {
+     "do": "wait",
+     "for": "#story-place",
+     "timeout": 30000
+    },
+    {
+     "do": "camera",
+     "focus": "[role=status]",
+     "zoom": 1.7,
+     "at": "sun"
+    },
+    {
+     "do": "pause",
+     "ms": 400
+    },
+    {
+     "do": "camera",
+     "zoom": "out",
+     "at": "grey"
+    },
+    {
+     "do": "pause",
+     "ms": 400
+    }
+   ]
+  },
+  {
+   "id": "chair",
+   "type": "live",
+   "say": "The director runs the channel on its own, but you can take the chair from it. Pick any camera in the running order and it goes on air, for everyone watching, for five minutes.",
+   "actions": [
+    {
+     "do": "scroll",
+     "to": 0,
+     "ms": 600
+    },
+    {
+     "do": "click",
+     "sel": ":nth-match([data-rail-item], 5)",
+     "at": "Pick",
+     "zoom": 1.2
+    },
+    {
+     "do": "wait",
+     "for": 2500
+    },
+    {
+     "do": "camera",
+     "focus": "header",
+     "zoom": 1.45,
+     "at": "everyone"
+    },
+    {
+     "do": "pause",
+     "ms": 400
+    },
+    {
+     "do": "camera",
+     "zoom": "out"
+    }
+   ]
+  },
+  {
+   "id": "news",
+   "type": "live",
+   "say": "Every place the channel is watching also carries today's real headline, searched live, with the time it was published sitting underneath it.",
+   "actions": [
+    {
+     "do": "click",
+     "sel": "[role=tab]:has-text('News')",
+     "at": "headline",
+     "zoom": 1.15
+    },
+    {
+     "do": "wait",
+     "for": 3500
+    },
+    {
+     "do": "camera",
+     "focus": "[role=tabpanel]",
+     "zoom": 1.3,
+     "at": "published"
+    },
+    {
+     "do": "pause",
+     "ms": 400
+    },
+    {
+     "do": "camera",
+     "zoom": "out"
+    }
+   ]
+  },
+  {
+   "id": "ask",
+   "type": "live",
+   "say": "And you can ask the director a question. It sees the frame you have open and the whole running order behind it, so it answers from what is genuinely on screen rather than from a guess.",
+   "actions": [
+    {
+     "do": "click",
+     "sel": "[role=tab]:has-text('Ask')",
+     "at": "ask",
+     "zoom": 1.15
+    },
+    {
+     "do": "pause",
+     "ms": 400
+    },
+    {
+     "do": "type",
+     "sel": "textarea",
+     "text": "Where is the sun right now?",
+     "cps": 22,
+     "at": "director",
+     "enter": true
+    },
+    {
+     "do": "wait",
+     "for": 6000
+    },
+    {
+     "do": "camera",
+     "focus": "[role=tabpanel]",
+     "zoom": 1.3,
+     "at": "screen"
+    },
+    {
+     "do": "pause",
+     "ms": 400
+    },
+    {
+     "do": "camera",
+     "zoom": "out"
+    }
+   ]
+  },
+  {
+   "id": "tech",
+   "type": "card",
+   "say": "The frames come from public cameras. Every one is checked for age and place, then scored and narrated by a vision model. Convex pushes the chosen cut straight to every open browser, with no polling anywhere.",
+   "card": {
+    "layout": "flow",
+    "kicker": "How it works",
+    "title": "Fetch, verify, score, broadcast.",
+    "nodes": [
+     {
+      "label": "Public cameras",
+      "sub": "real stills, checked for age and place",
+      "at": "Frames"
+     },
+     {
+      "label": "Vision model",
+      "sub": "scores and narrates each frame",
+      "at": "scored"
+     },
+     {
+      "label": "Convex",
+      "sub": "reactive cut to every browser",
+      "at": "Convex"
+     }
+    ]
+   }
+  },
+  {
+   "id": "end",
+   "type": "clip",
+   "from": "cut",
+   "offset": 0.4,
+   "dur": 9.0,
+   "reveal": false,
+   "say": "The planet is the only programming. Go and watch it.",
+   "card": {
+    "layout": "end",
+    "title": "Meanwhile",
+    "sub": "The planet, on air \u2014 and every frame says how old it is.",
+    "url": "honorable-opossum-473.convex.site",
+    "meta": "Built with Convex \u00b7 Firecrawl \u00b7 AgentMail"
+   }
+  }
+ ]
+}

@@ -10,3 +10,13 @@ dist/
 # Convex agent-skill docs, re-installable with: npx convex ai-files install
 .agents/
 skills-lock.json
+
+# demo video working files (large; regenerate with demokit)
+video/rec/
+video/probe/
+video/build/overlays/
+video/recon*/
+video/*.log
+video/list.txt
+video/voice/
+
