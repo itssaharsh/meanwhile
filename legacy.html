@@ -36,6 +36,8 @@
   .live{position:absolute;top:24px;right:24px;text-align:right;font-family:var(--mono);}
   .live .on{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:var(--teal);letter-spacing:.1em;} .live .on .b{width:8px;height:8px;border-radius:50%;background:var(--teal);box-shadow:0 0 10px var(--teal);}
   @media (prefers-reduced-motion:no-preference){ .live .on .b{animation:pulse 1.8s infinite;} } @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  .msg .by{font-size:10px;color:#5c6678;margin-top:6px;letter-spacing:.06em;text-transform:uppercase;}
+  .msg .step{color:var(--muted);font-style:italic;}
   .live .watch{font-size:12px;color:var(--muted);margin-top:7px;} .live .watch b{color:var(--text);font-weight:400;font-variant-numeric:tabular-nums;} .live .tc{font-size:10.5px;color:#5c6678;margin-top:3px;}
   .director{position:absolute;top:24px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:9px 16px;border-radius:999px;max-width:min(90vw,540px);}
   .director .d{width:7px;height:7px;border-radius:50%;background:var(--amber);flex:none;box-shadow:0 0 8px var(--amber);} @media (prefers-reduced-motion:no-preference){ .director .d{animation:pulse 1.2s infinite;} }
@@ -337,11 +339,30 @@
     if(/(camera|how many|coverage|watch|sun|morning|day)/.test(t))return {text:"I watch 11 always-on cameras, and I can go and find a live camera for any of 177 countries on demand. The lit half of the Earth is daytime — spin it and the sunrise line sweeps across into morning. Click any country and I'll pull its cameras.",moment:null};
     if(/(hi|hello|hey|yo)\b/.test(t))return {text:"Hey — click any country on the globe and I'll fetch it live, or ask me about a place (Japan, Brazil, Iceland…).",moment:null};
     return {text:"Try clicking a country on the globe, or name one (India, Norway, Chile…) and I'll pull it live.",moment:null};}
+  /* The real chat: a model call with the frame that is on air as context. `respond()` below
+     is the old local matcher, kept for ?demo=true, where there is no director to ask. */
   function ask(q){if(!q.trim())return;addMsg("u",esc(q));var typing=document.createElement("div");typing.className="typing";typing.innerHTML="<i></i><i></i><i></i>";cmsgs.appendChild(typing);cmsgs.scrollTop=cmsgs.scrollHeight;
+    if(window.__ask){
+      var stepEl=addMsg("a",'<span class="step">Reading the frame…</span>'),steps=["Reading the frame…","Locating the camera…","Working out the sun angle there…","Writing…"],si=0;
+      var stepTimer=reduce?null:setInterval(function(){si=Math.min(si+1,steps.length-1);stepEl.innerHTML='<span class="step">'+esc(steps[si])+'</span>';},900);
+      window.__ask(q).then(function(r){
+        if(stepTimer)clearInterval(stepTimer);
+        typing.remove();stepEl.remove();
+        var d=addMsg("a",esc(r&&r.text?r.text:"The chat lost its line to the director."));
+        if(r&&r.servedBy){var by=document.createElement("div");by.className="by";by.textContent=r.servedBy;d.appendChild(by);}
+        cmsgs.scrollTop=cmsgs.scrollHeight;
+      }).catch(function(){
+        if(stepTimer)clearInterval(stepTimer);
+        typing.remove();stepEl.remove();
+        addMsg("a",esc("The chat lost its line to the director."));
+        cmsgs.scrollTop=cmsgs.scrollHeight;
+      });
+      return;
+    }
     setTimeout(function(){typing.remove();var r=respond(q);var d=addMsg("a",esc(r.text));if(r.moment!=null){var btn=document.createElement("button");btn.className="openbtn";btn.textContent="▶ Open "+FEED[r.moment].place;btn.addEventListener("click",function(){openStoryData(FEED[r.moment]);});d.appendChild(btn);}else if(r.country){var b2=document.createElement("button");b2.className="openbtn";b2.textContent="🛰️ Fetch "+r.country.properties.name;b2.addEventListener("click",function(){openChat(false);selectCountry(r.country);});d.appendChild(b2);}cmsgs.scrollTop=cmsgs.scrollHeight;},reduce?100:720);}
   document.getElementById("cform").addEventListener("submit",function(e){e.preventDefault();ask(cinput.value);cinput.value="";});
   document.getElementById("cchips").addEventListener("click",function(e){var c=e.target.closest(".chip");if(c)ask(c.textContent);});
-  addMsg("a","Hi — I'm watching Earth live. Click any country to pull its cameras, or ask me what's happening anywhere.");
+  addMsg("a","Hi — I'm watching Earth live. Ask me about the view that's on air, or click any country to pull it live.");
 
   /* clock + tip. There is no viewer counter: we do not know how many people are watching,
      and a number that drifts by a random amount every two seconds is not a measurement. */

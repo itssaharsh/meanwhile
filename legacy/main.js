@@ -5,6 +5,7 @@ const live = startLive();
 
 window.__fetchCountry = live.fetchCountry;
 if (live.subscribe) window.__subscribe = live.subscribe;
+if (live.ask) window.__ask = live.ask;
 
 // The director banner gets overwritten on every cut, so the mode goes in the masthead
 // subtitle instead — where it stays visible for the whole demo.

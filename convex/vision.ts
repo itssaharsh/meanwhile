@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { resolveProvider, describe, scrub, type VisionOverride, type Resolved } from "./providers";
+import { resolveChain, describe, scrub, type VisionOverride, type Resolved } from "./providers";
 
 // One vision call, spoken to whichever OpenAI-compatible provider is configured — with
 // model failover for providers that have a chain (Gemini).
@@ -183,32 +183,42 @@ async function keyTag(key: string): Promise<string> {
 
 // ---------------------------------------------------------------------------
 export async function visionComplete(args: Args): Promise<VisionResult> {
-  const p = resolveProvider(args.override);
-  if (!p.apiKey) {
+  const providers = resolveChain(args.override);
+  const usable = providers.filter((r) => r.apiKey);
+  if (!usable.length) {
     console.warn(
-      `[meanwhile] no API key for ${p.label} — skipping ${args.label}. ` +
+      `[meanwhile] no API key for ${providers[0].label} — skipping ${args.label}. ` +
         `Set one with: npx convex env set OPENAI_API_KEY <key>`,
     );
     return null;
   }
 
-  const client = new OpenAI({ apiKey: p.apiKey, baseURL: p.baseURL });
-  const now = Date.now();
-
-  // Only the deployment key's exhaustion is remembered (see modelState.ts).
-  const persist = args.state && !p.byok ? { store: args.state, tag: await keyTag(p.apiKey) } : null;
-  const blocked = new Map<string, ModelMark>();
-  if (persist) {
-    for (const m of await persist.store.blocked(p.provider, persist.tag)) {
-      if (m.until > now) blocked.set(m.model, m);
-    }
-  }
-
-  const live = p.chain ? await liveModels(client, `${p.provider}:${p.baseURL ?? ""}`) : null;
-  const chain = buildChain(p, live);
   const attempts: Attempt[] = [];
 
-  for (const model of chain) {
+  // Providers in order, models within each. The second provider is only reached when every
+  // model on the first is unavailable, so a paid account in front costs nothing while it works
+  // and costs only itself when it runs out.
+  for (const p of usable) {
+    const client = new OpenAI({ apiKey: p.apiKey!, baseURL: p.baseURL });
+    const now = Date.now();
+
+    // Only the deployment key's exhaustion is remembered (see modelState.ts).
+    const persist = args.state && !p.byok ? { store: args.state, tag: await keyTag(p.apiKey!) } : null;
+    const blocked = new Map<string, ModelMark>();
+    if (persist) {
+      for (const m of await persist.store.blocked(p.provider, persist.tag)) {
+        if (m.until > now) blocked.set(m.model, m);
+      }
+    }
+
+    const live = p.chain ? await liveModels(client, `${p.provider}:${p.baseURL ?? ""}`) : null;
+    const chain = buildChain(p, live);
+    if (!chain.length) {
+      attempts.push({ model: `${p.label}:*`, outcome: "no usable model on this account" });
+      continue;
+    }
+
+    models: for (const model of chain) {
     const b = blocked.get(model);
     if (b) {
       attempts.push({ model, outcome: `skipped (${b.reason})` });
@@ -284,18 +294,23 @@ export async function visionComplete(args: Args): Promise<VisionResult> {
           break; // next model
         }
 
+        // The same on every model of THIS provider — a bad key, a rejected image — but it
+        // says nothing about the next provider's key. Abandon this account, not the frame.
+        attempts.push({ model, outcome: `HTTP ${err?.status ?? "?"}` });
         console.error(
           `[meanwhile] ${args.label}: ${describe(p, model)} failed (${err?.status ?? "no status"}) — ` +
-            `not rotating, this would fail on every model: ${detail}`,
+            `giving up on ${p.label}: ${detail}`,
         );
-        return null;
+        break models;
       }
     }
   }
 
+  }
+
   console.error(
-    `[meanwhile] ${args.label}: every ${p.label} model is unavailable right now — ` +
-      attempts.map((a) => `${a.model}: ${a.outcome}`).join("; "),
+    `[meanwhile] ${args.label}: every model on ${usable.map((u) => u.label).join(" then ")} is ` +
+      `unavailable right now — ${attempts.map((a) => `${a.model}: ${a.outcome}`).join("; ")}`,
   );
   return null;
 }

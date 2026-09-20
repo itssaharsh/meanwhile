@@ -16,6 +16,7 @@ const fn = {
   getFeed: makeFunctionReference("director:getFeed"),
   fetchCountry: makeFunctionReference("countries:fetchCountry"),
   subscribe: makeFunctionReference("agentmail:subscribe"),
+  ask: makeFunctionReference("chat:ask"),
 };
 
 export const DEMO =
@@ -55,6 +56,10 @@ export function startLive() {
     fetchCountry: async (country, lat, lng) =>
       countryToMoment(await client.action(fn.fetchCountry, { country, lat, lng }), lat, lng),
     subscribe: (email) => client.mutation(fn.subscribe, { email }),
+    // A real model, shown the frame that is on air. Demo mode has no `ask`, and the page
+    // falls back to its local matcher there — which is honest, because in demo mode there
+    // is no frame and no director to ask.
+    ask: (question) => client.action(fn.ask, { question }),
   };
 }
 

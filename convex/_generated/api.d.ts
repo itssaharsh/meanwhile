@@ -11,6 +11,7 @@
 import type * as agentmail from "../agentmail.js";
 import type * as cameras from "../cameras.js";
 import type * as centroids from "../centroids.js";
+import type * as chat from "../chat.js";
 import type * as countries from "../countries.js";
 import type * as coverage from "../coverage.js";
 import type * as crons from "../crons.js";
@@ -45,6 +46,7 @@ declare const fullApi: ApiFromModules<{
   agentmail: typeof agentmail;
   cameras: typeof cameras;
   centroids: typeof centroids;
+  chat: typeof chat;
   countries: typeof countries;
   coverage: typeof coverage;
   crons: typeof crons;

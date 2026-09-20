@@ -16,6 +16,12 @@ export type ProviderId = "gemini" | "openai" | "openrouter";
 // each), then regular Flash (~20/day each). Each model has its OWN daily quota, so when
 // one is spent the next still works. Validated against the live /models list at runtime;
 // IDs that aren't present are dropped, never guessed at.
+// OpenAI, small first: a webcam frame at detail:"low" is a cheap call, and the cheapest model
+// that can see is the right default for a channel that scores a frame every twenty minutes.
+// Validated against the live /models list like every other chain, so an id that does not exist
+// on the account is dropped rather than guessed at.
+export const OPENAI_CHAIN = ["gpt-4o-mini", "gpt-4.1-mini", "gpt-4.1-nano", "gpt-4o"];
+
 export const GEMINI_CHAIN = [
   "gemini-3.5-flash-lite",
   "gemini-3.1-flash-lite",
@@ -38,6 +44,13 @@ export const PROVIDERS: Record<
     // When set, the provider is called with model failover: the preferred model first,
     // then this chain, each validated against the provider's live /models list.
     chain?: string[];
+    // Where every model in this provider's chain being unavailable sends us next. Crossing
+    // providers matters when the first one is a small paid account: a $5 balance running out
+    // mid-demo should cost us the better model, not the channel.
+    fallback?: ProviderId;
+    // Env vars holding this provider's key, most specific first. OPENAI_API_KEY is last on
+    // Gemini for the deployments that set the Gemini key there before there was anywhere else.
+    keyEnvs: string[];
   }
 > = {
   // The deployment default.
@@ -47,19 +60,24 @@ export const PROVIDERS: Record<
     defaultModel: GEMINI_CHAIN[0],
     keyHint: "from aistudio.google.com",
     chain: GEMINI_CHAIN,
+    keyEnvs: ["GEMINI_API_KEY", "GOOGLE_API_KEY", "OPENAI_API_KEY"],
   },
   // BYOK. baseURL undefined = the SDK's own default (api.openai.com/v1).
   openai: {
     label: "OpenAI",
     baseURL: undefined,
-    defaultModel: "gpt-4o-mini",
+    defaultModel: OPENAI_CHAIN[0],
     keyHint: "sk-… from platform.openai.com",
+    chain: OPENAI_CHAIN,
+    fallback: "gemini",
+    keyEnvs: ["OPENAI_API_KEY", "OPENAI_KEY"],
   },
   openrouter: {
     label: "OpenRouter",
     baseURL: "https://openrouter.ai/api/v1",
     defaultModel: "openai/gpt-4o-mini",
     keyHint: "sk-or-… from openrouter.ai",
+    keyEnvs: ["OPENROUTER_API_KEY", "OPENAI_API_KEY"],
   },
 };
 
@@ -108,9 +126,9 @@ export function resolveProvider(o?: VisionOverride): Resolved {
   const baseURL = byokProvider ? table.baseURL : (envOrNull("OPENAI_BASE_URL") ?? table.baseURL);
   const preferredModel = o?.model ?? (byokProvider ? null : envOrNull("OPENAI_MODEL"));
 
-  // OPENAI_API_KEY is the documented name; OPENAI_KEY is accepted so older deployments
-  // keep working.
-  const apiKey = o?.apiKey ?? envOrNull("OPENAI_API_KEY") ?? envOrNull("OPENAI_KEY");
+  // Each provider keeps its key in its own variable, so two providers can be configured at
+  // once — which is what lets a paid OpenAI account sit in front of the free Gemini chain.
+  const apiKey = o?.apiKey ?? keyFor(provider);
 
   return {
     provider,
@@ -122,6 +140,46 @@ export function resolveProvider(o?: VisionOverride): Resolved {
     apiKey,
     byok: Boolean(o?.apiKey),
   };
+}
+
+/** The deployment's key for one provider, from the first of its variables that is set. */
+export function keyFor(provider: ProviderId): string | null {
+  for (const name of PROVIDERS[provider].keyEnvs) {
+    const v = envOrNull(name);
+    if (v) return v;
+  }
+  return null;
+}
+
+/**
+ * Every provider a single call may try, in order.
+ *
+ * One entry for a caller's own key: BYOK never falls through to the deployment's provider,
+ * because someone else's request should not spend our quota, and a key they supplied should
+ * not silently be replaced by ours.
+ */
+export function resolveChain(o?: VisionOverride): Resolved[] {
+  const first = resolveProvider(o);
+  if (first.byok) return [first];
+  const next = PROVIDERS[first.provider].fallback;
+  if (!next || next === first.provider) return [first];
+  // Only worth queueing if it actually has a key of its own.
+  const key = keyFor(next);
+  if (!key) return [first];
+  const table = PROVIDERS[next];
+  return [
+    first,
+    {
+      provider: next,
+      label: table.label,
+      baseURL: table.baseURL,
+      preferredModel: null,
+      defaultModel: table.defaultModel,
+      chain: table.chain ?? null,
+      apiKey: key,
+      byok: false,
+    },
+  ];
 }
 
 // Describes a provider + the model that actually served, for a log line. NEVER includes
@@ -138,6 +196,10 @@ export function scrub(text: unknown, secret: string | null): string {
   if (secret && secret.length >= 8) s = s.split(secret).join("[redacted]");
   // Belt and braces: common key shapes, in case a different secret shows up.
   return s
+    // A provider may echo the key back with its own masking — OpenAI's 401 prints
+    // "AQ.Ab8RN*****". The visible head is still eight characters of a real credential, and
+    // this file's rule is no prefix, no length, nothing.
+    .replace(/[A-Za-z0-9._-]{3,}\*{3,}/g, "[redacted]")
     .replace(/sk-[A-Za-z0-9_-]{16,}/g, "[redacted]")
     .replace(/AIza[A-Za-z0-9_-]{20,}/g, "[redacted]")
     .replace(/AQ\.[A-Za-z0-9_-]{20,}/g, "[redacted]")
