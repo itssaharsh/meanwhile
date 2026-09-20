@@ -218,7 +218,7 @@ export function Channel({ children }: { children?: ReactNode }) {
         {/* The planet, always mounted, always turning. On mobile its region is pinned to 45vh
             and the sheet travels OVER it — the canvas never reflows when the sheet moves, so
             the globe never restarts mid-drag. */}
-        <div className={cn("relative", narrow ? "h-[45vh] shrink-0" : "min-h-0 flex-1")}>
+        <div className={cn("relative", narrow ? "h-[45vh] w-full shrink-0" : "min-h-0 flex-1")}>
           <Globe
             onAir={onAir ? { lat: onAir.place.lat, lon: onAir.place.lon, snapshotId: onAir.snapshotId } : null}
             active={picked ? { name: picked.name, verified } : null}

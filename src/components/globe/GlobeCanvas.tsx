@@ -200,12 +200,19 @@ export default function GlobeCanvas({
     // compete with the 84KB pair for the same pipe, and on a throttled connection the small
     // ones never won — the slate stayed up past forty seconds. The full pair is not asked for
     // until the small one is on screen.
+    // A phone stops at the small pair. The full textures are 4096x2048 each, which is about
+    // 32MB of RGBA per side once decoded — memory an iPhone's WebGL context may simply refuse,
+    // and the difference is invisible on a 390px-wide screen anyway. This is also the single
+    // most likely way the globe fails on a device we cannot test on.
+    const phone = window.innerWidth < 640 || (window.devicePixelRatio > 1 && window.innerWidth < 820);
+
     loader.loadAsync("/earth/day-lo.jpg").then((t) => {
       if (cancelled) return;
       put("dayTexture", t);
       loader.loadAsync("/earth/night-lo.jpg").then((n) => {
         if (cancelled) return;
         put("nightTexture", n);
+        if (phone) return;
         loader.loadAsync("/earth/day.jpg").then((d) => !cancelled && put("dayTexture", d));
         loader.loadAsync("/earth/night.jpg").then((n2) => !cancelled && put("nightTexture", n2));
       });

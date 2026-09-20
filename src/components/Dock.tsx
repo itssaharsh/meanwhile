@@ -110,7 +110,11 @@ export function Dock({
     // two move as one body. Height rather than transform, because the rail has to stay put at
     // the sheet's top edge at every snap — and the globe is outside the sheet entirely, so it
     // never reflows whichever we animate.
-    const height = drag ? `${Math.round(drag.height)}px` : snap === 0 ? "var(--rail-h)" : `${snap}%`;
+    // vh, not %: the snap points are defined against the viewport (UI-SPEC: [0, 62vh, 92vh])
+    // and the drag projects against window.innerHeight. A percentage would resolve against the
+    // container under the TopBar instead, so a released drag would settle a few pixels away
+    // from where it was let go.
+    const height = drag ? `${Math.round(drag.height)}px` : snap === 0 ? "var(--rail-h)" : `${snap}vh`;
 
     const onPointerDown = (e: React.PointerEvent) => {
       // Never swallow a tap on a rail card: a drag has to travel before it is a drag.
@@ -162,7 +166,12 @@ export function Dock({
           reduced || drag ? "" : "[transition:height_280ms_var(--ease-out-quint)]",
           className,
         )}
-        style={{ height, paddingBottom: "env(safe-area-inset-bottom)" }}
+        // The TopBar is the one thing the sheet may never cover: 92vh plus a rounding error
+        // puts its top edge exactly on the bar's bottom, and a pixel either way eats it. The
+        // sheet's containing block already starts below the bar, so 100% of it is exactly
+        // "everything under the TopBar and no more" — and unlike a dvh calculation it means
+        // the same thing in every engine.
+        style={{ height, maxHeight: "100%", paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         {/* The handle and the rail are one grab area: the rail IS the sheet's handle. */}
         <div
