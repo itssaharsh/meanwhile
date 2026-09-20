@@ -206,6 +206,25 @@ assert(links[1].endsWith("/ponte-da-amizade.html"), "then one naming the country
 assert(links.indexOf(links.find((l) => l.includes("brasil"))) === links.length - 1, "a sidebar camera elsewhere ranks last");
 assert(!links.some((l) => /privacy|\/webcam\.html$|other\.example/.test(l)), "never an off-site link, a legal page, or the directory's own parent");
 
+// --- a tie is broken by provable freshness, not by arrival order -------------------
+// The model started returning whole numbers, four cameras tied on 7, and "strictly greater to
+// replace" froze the cut. These pin the rule that unfroze it.
+{
+  const now = Date.now();
+  const fresh = { at: now, score: 7, capturedAt: now - 60_000, id: "verifiable" };
+  const blind = { at: now, score: 7, capturedAt: null, id: "no-timestamp" };
+  const older = { at: now, score: 7, capturedAt: now - 3 * 60 * 60_000, id: "older" };
+  assert(pickCut([blind, fresh], { now }).id === "verifiable", "on a tie, a frame whose age we can prove wins");
+  assert(pickCut([older, fresh], { now }).id === "verifiable", "on a tie between two provable frames, the fresher wins");
+  assert(pickCut([fresh, { ...blind, score: 7.1 }], { now }).id === "no-timestamp", "a higher score still beats a provable age");
+  const same = { ...fresh, id: "incumbent" };
+  assert(pickCut([same, { ...fresh, id: "challenger" }], { now }).id === "incumbent", "a dead heat on every key keeps the incumbent");
+  assert(
+    rankFeed([blind, older, fresh]).map((x) => x.id).join(",") === "verifiable,older,no-timestamp",
+    "the running order uses the same rule as the cut",
+  );
+}
+
 // --- headlines fit on a card ---------------------------------------------------
 const styledPost = "\u{1D5DC}\u{1D5F1}\u{1D5EE} \u{1D5E2}\u{1D5F1}\u{1D5F6}\u{1D5FB}\u{1D5F4}\u{1D5EE} Kenya's Ambassador to the United Nations has unveiled a committee";
 assert(trimHeadline(styledPost) === "Ida Odinga", "a post's styled title run is split off its plain body");

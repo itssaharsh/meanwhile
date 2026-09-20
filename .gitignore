@@ -11,12 +11,22 @@ dist/
 .agents/
 skills-lock.json
 
-# demo video working files (large; regenerate with demokit)
+# Demo video: the script and storyboard are tracked; everything a render produces is not.
 video/rec/
 video/probe/
-video/build/overlays/
+video/build/
 video/recon*/
-video/*.log
-video/list.txt
 video/voice/
+video/demokit/
+video/*.log
+video/*.mp4
+video/*.m4a
+video/*.wav
+video/*.srt
+
+# Scratch
+*.local
+.DS_Store
+Thumbs.db
+*.tmp
 

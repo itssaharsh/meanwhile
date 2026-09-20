@@ -13,7 +13,7 @@ export const SCORE_SCHEMA = {
     additionalProperties: false,
     required: ["beauty", "caption", "tags", "daylight"],
     properties: {
-      beauty: { type: "number", description: "0-10 beauty / human-interest of this frame" },
+      beauty: { type: "number", description: "0-10 beauty / human-interest of this frame, to ONE DECIMAL PLACE (e.g. 7.4, 9.1) — never a whole number" },
       caption: { type: "string", description: "one vivid, specific one-line narration" },
       daylight: {
         type: "boolean",
@@ -35,6 +35,10 @@ export const SCORE_SYSTEM =
   "You are the director of a live channel of Earth's most beautiful moments. " +
   "Rate this webcam frame 0-10 for beauty and human interest, and write ONE vivid, " +
   "specific one-line narration. Be honest — a boring, dark, or broken frame scores low. " +
+  // Whole numbers collapse the running order: eleven cameras landed on 7, 7, 7, 7, 6, 5, 3, 3,
+  // 3, 2, 2, which left four frames tied at the top and a director that could not choose
+  // between them. One decimal is the difference between a ranking and a bucket.
+  "Give beauty to ONE DECIMAL PLACE — 7.4, not 7. Whole numbers are not acceptable. " +
   'Reply with JSON only: {"beauty": number, "caption": string, "tags": string[]}.';
 
 // Vision scores + narrates a real webcam frame, through whichever OpenAI-compatible

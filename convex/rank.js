@@ -16,8 +16,28 @@ export function isFresh(snap, now, maxAgeMs = MAX_SNAPSHOT_AGE_MS) {
   return now - snap.at <= maxAgeMs;
 }
 
-// Highest-scored fresh snapshot wins. Ties keep the incumbent (strictly greater to replace),
-// which stops two equal scores from flapping the cut back and forth.
+/** The keys the cut is decided on, most significant first.
+ *
+ *  Score alone was enough while the model answered to one decimal. When it started returning
+ *  whole numbers, four cameras tied on 7 and "strictly greater to replace" meant the channel
+ *  stopped cutting altogether — a live channel that never cuts. So a tie now falls through to
+ *  the thing this product is actually about: a frame whose age we can prove beats one we
+ *  cannot, and between two provable frames the fresher one wins. Both keys are properties of
+ *  the snapshot, so the order is stable for a given set of frames. */
+function cutKeys(s) {
+  return [s.score, s.capturedAt != null ? 1 : 0, s.capturedAt ?? 0];
+}
+
+function beats(a, b) {
+  const ka = cutKeys(a);
+  const kb = cutKeys(b);
+  for (let i = 0; i < ka.length; i++) {
+    if (ka[i] !== kb[i]) return ka[i] > kb[i];
+  }
+  return false; // a dead heat on every key keeps the incumbent, so the cut cannot flap
+}
+
+// Highest-scored fresh snapshot wins; see cutKeys for how a tie is settled.
 export function pickCut(snapshots, opts = {}) {
   const now = opts.now ?? Date.now();
   const maxAgeMs = opts.maxAgeMs ?? MAX_SNAPSHOT_AGE_MS;
@@ -25,7 +45,7 @@ export function pickCut(snapshots, opts = {}) {
   for (const s of snapshots ?? []) {
     if (!s || typeof s.score !== "number" || Number.isNaN(s.score)) continue;
     if (!isFresh(s, now, maxAgeMs)) continue;
-    if (!best || s.score > best.score) best = s;
+    if (!best || beats(s, best)) best = s;
   }
   return best;
 }
@@ -34,7 +54,8 @@ export function rankFeed(items, limit = 12) {
   return (items ?? [])
     .filter((s) => s && typeof s.score === "number" && !Number.isNaN(s.score))
     .slice()
-    .sort((a, b) => b.score - a.score)
+    // Same order the cut is chosen in, so the running order never contradicts the frame on air.
+    .sort((a, b) => (beats(a, b) ? -1 : beats(b, a) ? 1 : 0))
     .slice(0, limit);
 }
 
