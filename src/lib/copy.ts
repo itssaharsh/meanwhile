@@ -234,6 +234,34 @@ export const ADDED = {
   globeUnavailable: s("Picture unavailable on this device", "UI-SPEC C-02 error", "C-02 ?state=contextlost-twice"),
   globeAria: s("Interactive globe. Arrow keys rotate. Press K to open the country list.", "UI-SPEC C-02 focus-visible", "C-02 canvas aria-label"),
 
+  // Added 2026-09-21 at the author's request: a judge landing on a spinning globe could not
+  // tell what they were looking at, could not change the camera, and could not see the news
+  // the channel had already gathered. The intro's title and body are COPY.md §10 verbatim.
+  introTitle: s("Meanwhile — the planet, on air", "COPY.md §10 OG title", "C-13 ?state=intro"),
+  introBody: s(
+    "An AI director watches real webcams around the world and cuts the best one on air. True day and night on a spinning globe. Every frame checked for age and place before it airs.",
+    "COPY.md §10 description",
+    "C-13 ?state=intro",
+  ),
+  introHow: s(
+    "Teal means we read the frame's age from the source. Grey means we could not, and we say so.",
+    "author request 2026-09-21 — the one rule a judge needs to read the colours",
+    "C-13 ?state=intro",
+  ),
+  introStart: s("Start watching", "author request 2026-09-21", "C-13 ?state=intro"),
+  introPick: s("Or pick a country", "author request 2026-09-21", "C-13 ?state=intro"),
+  chairTake: s("Put this on air", "author request 2026-09-21 — viewer takes the director's chair", "C-07 / C-04"),
+  chairOnAir: s("On air now", "author request 2026-09-21 — the frame already on air", "C-07 / C-04"),
+  chairHeld: f((time: string) => `You're directing · ${time} left`, "author request 2026-09-21", "C-01 ?state=chair", ["4 min"]),
+  chairRelease: s("Give the chair back", "author request 2026-09-21", "C-01 ?state=chair"),
+  dockTabNews: s("News", "author request 2026-09-21 — the third dock tab", "C-16 ?state=news"),
+  newsEmptyTitle: s("No headlines yet", "author request 2026-09-21", "C-16 ?state=news-empty"),
+  newsEmptyBody: s(
+    "Nothing has been published today for the places on air. This fills in as the channel moves.",
+    "author request 2026-09-21",
+    "C-16 ?state=news-empty",
+  ),
+  newsLoading: s("Looking for today's news…", "author request 2026-09-21", "C-16 ?state=news-loading"),
   dockTabStory: s("Story", "UI-SPEC §4 layout", "C-03 tab"),
   dockTabAsk: s("Ask", "UI-SPEC §4 layout", "C-03 tab"),
   dockReturnPill: f((place: string) => `Now · ${place}`, "UI-SPEC C-03 cut-while-open", "C-03 ?state=open-cut", ["Cape Town"]),

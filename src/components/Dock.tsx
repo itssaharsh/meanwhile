@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const E = [0.22, 1, 0.36, 1] as const;
-export type DockTab = "story" | "ask";
+export type DockTab = "story" | "ask" | "news";
 
 /** "NOW · REYKJAVÍK" — persists after a cut until clicked; the place is cut at 14 characters. */
 function ReturnPill({ s, reduced, onReturn }: { s: Snapshot; reduced: boolean; onReturn?: () => void }) {
@@ -50,6 +50,7 @@ export function Dock({
   onSnapChange,
   story,
   ask,
+  news,
   railStrip,
   reduced: forceReduced,
   onClose,
@@ -67,6 +68,7 @@ export function Dock({
   snap?: 0 | 62 | 92;
   story: ReactNode;
   ask: ReactNode;
+  news: ReactNode;
   /** Mobile: the snap the drag settled on. */
   onSnapChange?: (snap: 0 | 62 | 92) => void;
   /** Mobile: the rail's 96px peek strip, welded to the sheet's top edge as its handle. */
@@ -86,6 +88,7 @@ export function Dock({
         <TabsList className="h-full border-b-0">
           <TabsTrigger value="story">{ADDED.dockTabStory.text}</TabsTrigger>
           <TabsTrigger value="ask">{ADDED.dockTabAsk.text}</TabsTrigger>
+          <TabsTrigger value="news">{ADDED.dockTabNews.text}</TabsTrigger>
         </TabsList>
         <div className="ml-auto flex items-center gap-1">
           {returnTo && <ReturnPill s={returnTo} reduced={reduced} onReturn={onReturn} />}
@@ -101,6 +104,9 @@ export function Dock({
       </TabsContent>
       <TabsContent value="ask" className="flex flex-col overflow-hidden">
         {ask}
+      </TabsContent>
+      <TabsContent value="news" className="flex flex-col overflow-y-auto overscroll-contain px-4 pt-2 max-sm:pb-[env(safe-area-inset-bottom)]">
+        {news}
       </TabsContent>
     </Tabs>
   );

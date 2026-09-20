@@ -86,7 +86,30 @@ export const storageInUse = internalQuery({
 // A plain helper, shared by reselect and removeSnapshot, rather than one mutation calling
 // the other through `internal` — a same-module call like that is the TypeScript
 // circular-inference trap the Convex guidelines warn about.
-async function pickCut_(ctx: MutationCtx): Promise<void> {
+/** How long a viewer's choice outranks the director's. Long enough to look at the frame and
+ *  talk about it, short enough that a channel left alone goes back to being a channel. */
+export const CHAIR_HOLD_MS = 5 * 60 * 1000;
+
+/** Is a viewer currently holding the director's chair? */
+export async function viewerHolds(ctx: MutationCtx): Promise<boolean> {
+  const latest = (await ctx.db.query("cut").order("desc").take(1))[0];
+  return Boolean(latest && latest.by === "viewer" && Date.now() - latest.at < CHAIR_HOLD_MS);
+}
+
+/** End a viewer's hold and let the director choose again. A plain helper, because a mutation
+ *  cannot call another mutation — the same reason pickCut_ is one. The hold is ended by
+ *  choosing past it, never by rewriting when the viewer's cut happened: that row is a record
+ *  of something that really occurred at that time. */
+export async function handBack(ctx: MutationCtx): Promise<void> {
+  await pickCut_(ctx, { force: true });
+}
+
+async function pickCut_(ctx: MutationCtx, opts: { force?: boolean } = {}): Promise<void> {
+  // The director does not override someone who is holding the chair. Without this the next
+  // refresh would yank the frame out from under them mid-sentence. `force` is the viewer
+  // handing it back deliberately.
+  if (!opts.force && (await viewerHolds(ctx))) return;
+
   const cams = await ctx.db
     .query("cameras")
     .withIndex("by_active", (q) => q.eq("active", true))
@@ -111,9 +134,11 @@ async function pickCut_(ctx: MutationCtx): Promise<void> {
   }
 
   const current = (await ctx.db.query("cut").order("desc").take(1))[0];
-  if (current && current.snapshotId === best._id) return; // no change
+  // No change — unless a viewer is handing the chair back, in which case the row still has to
+  // be written or the latest cut stays theirs and the hold never ends.
+  if (current && current.snapshotId === best._id && !opts.force) return;
 
-  await ctx.db.insert("cut", { snapshotId: best._id, cameraId: best.cameraId, at: Date.now() });
+  await ctx.db.insert("cut", { snapshotId: best._id, cameraId: best.cameraId, by: "director", at: Date.now() });
   console.log(`[meanwhile] cutting to ${best.caption?.slice(0, 60)} (${best.score})`);
 
   // The ONE Firecrawl touchpoint on the cron path: a headline for the snapshot now on air.

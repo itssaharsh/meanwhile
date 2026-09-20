@@ -38,7 +38,7 @@ export function KitApp({
   topBar: { state: TopBarState; onAir: Snapshot | null; previous?: Snapshot | null; deliveryChip?: ReactNode };
   /** "slate" skips WebGL entirely (the loading slate is a real C-02 state). */
   globe: { mode: "live" | "slate"; props?: Partial<GlobeProps>; dim?: number };
-  dock?: { open: boolean; tab: DockTab; story: ReactNode; ask: ReactNode; returnTo?: Snapshot | null; cutPulse?: boolean; snap?: 0 | 62 | 92 };
+  dock?: { open: boolean; tab: DockTab; story: ReactNode; ask: ReactNode; news?: ReactNode; returnTo?: Snapshot | null; cutPulse?: boolean; snap?: 0 | 62 | 92 };
   rail: { items: Snapshot[]; state?: RailState; flashId?: string | null };
   stage?: Snapshot | null;
   overlay?: ReactNode;
@@ -76,6 +76,7 @@ export function KitApp({
               snap={dock?.open ? (dock.snap ?? 62) : 0}
               tab={dock?.tab ?? "story"}
               story={dock?.story}
+              news={dock?.news ?? null}
               ask={dock?.ask}
               railStrip={railEl}
               returnTo={dock?.returnTo}
@@ -96,6 +97,7 @@ export function KitApp({
                 open={dock.open}
                 tab={dock.tab}
                 story={dock.story}
+                news={dock.news ?? null}
                 ask={dock.ask}
                 returnTo={dock.returnTo}
                 cutPulse={dock.cutPulse}

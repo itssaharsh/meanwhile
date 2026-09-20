@@ -8,6 +8,7 @@ import {
   FETCH,
   MAIL,
   MAIL_ADDRESS,
+  NEWS,
   NOW,
   ON_AIR,
   RERANKED,
@@ -26,6 +27,8 @@ import { DeliveryChip } from "@/components/DeliveryChip";
 import { FeedRail, type RailState } from "@/components/FeedRail";
 import { Globe } from "@/components/globe";
 import { NotFound, type NotFoundState } from "@/components/NotFound";
+import { Intro } from "@/components/Intro";
+import { NewsPanel } from "@/components/NewsPanel";
 import { EmptyState, VerifiedChips } from "@/components/primitives";
 import { RailItem } from "@/components/RailItem";
 import { ScoreReadout } from "@/components/ScoreReadout";
@@ -294,6 +297,35 @@ function appState(id: string, ctx: KitCtx): ReactNode {
           dock={{ open: true, tab: "ask", story: story(STORY_VERIFIED), ask: ask("answered"), snap: 92 }}
         />
       );
+    case "open-news":
+      return (
+        <KitApp
+          {...base}
+          topBar={{ state: "onair", onAir: ON_AIR }}
+          stage={ON_AIR}
+          dock={{
+            open: true,
+            tab: "news",
+            story: story(STORY_VERIFIED),
+            ask: ask("answered"),
+            news: <NewsPanel items={NEWS} now={NOW} onOpen={() => {}} />,
+            snap: 62,
+          }}
+        />
+      );
+    case "intro":
+    case "intro-reduced":
+      // The point of this state is that the channel is NOT stopped behind the card: the bar is
+      // live, the running order is full and the planet is turning. A judge dismisses it onto a
+      // screen that was already working.
+      return (
+        <KitApp
+          {...base}
+          topBar={{ state: "onair", onAir: ON_AIR }}
+          stage={ON_AIR}
+          overlay={<Intro onStart={() => {}} onPick={() => {}} reduced={id === "intro-reduced"} />}
+        />
+      );
     case "open-cut":
       // The cut landed while Venice's story was open: Cape Town's new frame is on air.
       return (
@@ -360,6 +392,9 @@ export const KIT: KitSection[] = [
       { id: "between", frame: "bar", extra: true, render: topBar("between", null, { framesScored: 11 }) },
       { id: "degraded", frame: "bar", extra: true, render: topBar("degraded", ON_AIR, { backAt: formatUtcTime(NOW + 60_000) }) },
       { id: "cut-replay", frame: "bar", extra: true, live: true, render: () => <CutLoop /> },
+      // The chip is grey on purpose: the viewer is choosing, but amber marks the frame on air,
+      // and only that.
+      { id: "chair", frame: "bar", render: topBar("onair", ON_AIR, { chair: { untilMs: NOW + 4 * 60_000, onRelease: () => {} } }) },
     ],
   },
   {
@@ -385,6 +420,7 @@ export const KIT: KitSection[] = [
       { id: "open-cut", frame: "app", render: (ctx) => appState("open-cut", ctx) },
       { id: "sheet-62", frame: "phone", render: (ctx) => appState("sheet-62", ctx) },
       { id: "sheet-92", frame: "phone", render: (ctx) => appState("sheet-92", ctx) },
+      { id: "open-news", frame: "app", render: (ctx) => appState("open-news", ctx) },
     ],
   },
   {
@@ -400,6 +436,8 @@ export const KIT: KitSection[] = [
       { id: "story-error", frame: "panel", render: panel(emptyBlock("story-error")) },
       { id: "story-empty", frame: "panel", render: panel(emptyBlock("story-first")) },
       { id: "story-hover", frame: "panel", extra: true, render: panel(story(STORY_VERIFIED, { forceHover: true })) },
+      { id: "story-putonair", frame: "panel", render: panel(story(STORY_VERIFIED, { onPutOnAir: () => {} })) },
+      { id: "story-isonair", frame: "panel", extra: true, render: panel(story(STORY_ONAIR, { onPutOnAir: () => {} })) },
     ],
   },
   {
@@ -523,6 +561,24 @@ export const KIT: KitSection[] = [
         extra: k === "country-misplaced" || k === "country-retrying",
         render: panel(emptyBlock(k), "story", 560),
       })),
+    ],
+  },
+  {
+    id: "C-13",
+    name: "Intro (first visit)",
+    states: [
+      { id: "intro", frame: "app", render: (ctx) => appState("intro", ctx) },
+      { id: "intro-reduced", frame: "app", extra: true, render: (ctx) => appState("intro-reduced", ctx) },
+    ],
+  },
+  {
+    id: "C-16",
+    name: "NewsPanel",
+    states: [
+      { id: "news", frame: "panel", render: panel(<NewsPanel items={NEWS} now={NOW} onOpen={() => {}} />, "story", 720) },
+      { id: "news-loading", frame: "panel", render: panel(<NewsPanel items={[]} now={NOW} loading />, "story", 420) },
+      { id: "news-empty", frame: "panel", render: panel(<NewsPanel items={[]} now={NOW} />, "story", 420) },
+      { id: "news-docked", frame: "app", extra: true, render: (ctx) => appState("open-news", ctx) },
     ],
   },
   {

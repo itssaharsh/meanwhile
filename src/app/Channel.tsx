@@ -18,6 +18,11 @@ import { StoryPanel } from "./StoryPanel";
 import { useAsk } from "./useAsk";
 import { useSubscribe } from "./useSubscribe";
 import { SubscribeSheet } from "@/components/SubscribeSheet";
+import { FrameDialog } from "@/components/FrameDialog";
+import { NewsPanel } from "@/components/NewsPanel";
+import { Intro } from "@/components/Intro";
+import { useMutation, useAction } from "convex/react";
+import { AnimatePresence } from "motion/react";
 import type { Snapshot } from "@/lib/types";
 import COUNTRIES from "@/data/countries.json";
 
@@ -148,6 +153,42 @@ export function Channel({ children }: { children?: ReactNode }) {
     if (!dockOpen) setReturnTo(null);
   }, [dockOpen]);
 
+  // The Ask thread lives here, not inside the panel, so switching to Story and back keeps the
+  // question, the answer and its chips. The Dock hides its panels rather than unmounting them,
+  // so the scroll position survives with it.
+  const askCandidates = useMemo(() => (onAir ? [onAir, ...feed.filter((f) => f.snapshotId !== onAir.snapshotId)] : feed), [onAir, feed]);
+  const chat = useAsk(askCandidates);
+  const mail = useSubscribe();
+
+  // The director's chair: who is choosing the frame on air.
+  const chair = useQuery(api.director.chair, DEMO || !convex ? "skip" : {});
+  const takeChair = useMutation(api.director.takeChair);
+  const releaseChair = useMutation(api.director.releaseChair);
+  const putOnAir = useCallback(
+    (s: Snapshot) => {
+      setFlyTo({ lat: s.place.lat, lng: s.place.lon, ms: FLY_CUT_MS });
+      if (!DEMO && convex) void takeChair({ snapshotId: s.snapshotId as never }).catch(() => undefined);
+    },
+    [takeChair],
+  );
+
+  // The frame at full size (UI-SPEC C-04 hover: "clicking opens the frame at full size").
+  const [zoomed, setZoomed] = useState<Snapshot | null>(null);
+
+  // Every story card gets the same four handlers, whether it came from the running order, a
+  // country click or the cut. They were wired on the TopBar but not here, so the card's own
+  // "Ask about this" and "Send me this" did nothing — the buttons were there, the actions
+  // were not.
+  const storyActions = {
+    onAsk: () => {
+      setTab("ask");
+      setDockOpen(true);
+      setSnap(62);
+    },
+    onSend: mail.show,
+    onFrame: setZoomed,
+  };
+
   // The story panel: a country fetch when one is running, otherwise the frame on air.
   const storyNode = picked ? (
     <StoryPanel
@@ -159,21 +200,45 @@ export function Channel({ children }: { children?: ReactNode }) {
         const c = centroidOf(name);
         if (c) openCountry(name, c);
       }}
+      {...storyActions}
     />
   ) : storyOverride ? (
-    <StoryCard story={storyOverride} now={now} onAirId={onAir?.snapshotId ?? null} />
+    <StoryCard story={storyOverride} now={now} onAirId={onAir?.snapshotId ?? null} {...storyActions} onPutOnAir={putOnAir} />
   ) : onAir ? (
-    <StoryCard story={onAir} now={now} onAirId={onAir.snapshotId} />
+    <StoryCard story={onAir} now={now} onAirId={onAir.snapshotId} {...storyActions} onPutOnAir={putOnAir} />
   ) : (
     <EmptyState kind="first" region="story" title={ADDED.storyFirstTitle.text} body={ADDED.storyFirstBody.text} />
   );
 
-  // The Ask thread lives here, not inside the panel, so switching to Story and back keeps the
-  // question, the answer and its chips. The Dock hides its panels rather than unmounting them,
-  // so the scroll position survives with it.
-  const askCandidates = useMemo(() => (onAir ? [onAir, ...feed.filter((f) => f.snapshotId !== onAir.snapshotId)] : feed), [onAir, feed]);
-  const chat = useAsk(askCandidates);
-  const mail = useSubscribe();
+
+  // The News tab: headlines for the places the channel is watching. The lookup runs when the
+  // tab is first opened — demand-driven, like every other Firecrawl call here.
+  const news = useQuery(api.director.getNews, DEMO || !convex ? "skip" : { limit: 12 });
+  const fillNews = useAction(api.news.fillForChannel);
+  const filled = useRef(false);
+  useEffect(() => {
+    if (tab !== "news" || filled.current || DEMO || !convex) return;
+    filled.current = true;
+    void fillNews({ max: 6 }).catch(() => undefined);
+  }, [tab, fillNews]);
+
+  // First visit: say what this is, over a channel that is already running.
+  const [introOpen, setIntroOpen] = useState(() => {
+    if (typeof localStorage === "undefined") return true;
+    try {
+      return localStorage.getItem("mw.intro.seen") !== "1";
+    } catch {
+      return true;
+    }
+  });
+  const closeIntro = useCallback(() => {
+    setIntroOpen(false);
+    try {
+      localStorage.setItem("mw.intro.seen", "1");
+    } catch {
+      // A browser that refuses storage just sees it again; that is not worth an error.
+    }
+  }, []);
 
   // T-05: a place named in an answer flies the globe and opens that Story — without clearing
   // the thread behind it.
@@ -205,14 +270,19 @@ export function Channel({ children }: { children?: ReactNode }) {
         setTab("story");
         setDockOpen(true);
         setSnap(62);
-        setFlyTo({ lat: s.place.lat, lng: s.place.lon, ms: FLY_COUNTRY_MS });
+        // Opening a frame from the running order also puts it on air: the rail is the channel's
+        // running order, and clicking one and not seeing it is the confusing half-measure.
+        putOnAir(s);
       }}
     />
   );
 
   return (
     <div className="fixed inset-0 flex flex-col bg-canvas">
-      <TopBar state={topBarState} onAir={onAir} previous={previous} now={now} onAsk={() => { setTab("ask"); setDockOpen(true); setSnap(62); }} onSend={mail.show} />
+      <TopBar state={topBarState} onAir={onAir} previous={previous} now={now} onAsk={() => { setTab("ask"); setDockOpen(true); setSnap(62); }}
+        onSend={mail.show}
+        chair={chair?.by === "viewer" && chair.until ? { untilMs: chair.until, onRelease: () => void releaseChair({}).catch(() => undefined) } : null}
+      />
 
       <div className="relative flex min-h-0 flex-1">
         {/* The planet, always mounted, always turning. On mobile its region is pinned to 45vh
@@ -229,6 +299,21 @@ export function Channel({ children }: { children?: ReactNode }) {
           />
           {/* The router's outlet renders over the globe, never around it. */}
           {children}
+
+          <AnimatePresence>
+            {introOpen && (
+              <Intro
+                key="intro"
+                onStart={closeIntro}
+                onPick={() => {
+                  closeIntro();
+                  const first = (coveredList ?? [])[0];
+                  const c = first ? centroidOf(first) : null;
+                  if (c && first) openCountry(first, c);
+                }}
+              />
+            )}
+          </AnimatePresence>
         </div>
 
         <Dock
@@ -245,6 +330,10 @@ export function Channel({ children }: { children?: ReactNode }) {
           returnTo={returnTo}
           cutPulse={cutPulse}
           story={storyNode}
+          news={<NewsPanel items={news ?? []} now={now} loading={news === undefined} onOpen={(n) => {
+            const hit = feed.find((f) => f.snapshotId === n.snapshotId);
+            if (hit) { setPicked(null); country.reset(); setStoryOverride(hit); setTab("story"); setFlyTo({ lat: hit.place.lat, lng: hit.place.lon, ms: FLY_COUNTRY_MS }); }
+          }} />}
           ask={
             <Suspense fallback={<div className="min-h-0 flex-1" />}>
             <AskPanel
@@ -278,6 +367,8 @@ export function Channel({ children }: { children?: ReactNode }) {
         onSubmit={mail.submit}
         onDone={mail.close}
       />
+
+      <FrameDialog story={zoomed} now={now} onOpenChange={(o) => !o && setZoomed(null)} />
 
       {!narrow && railEl}
 

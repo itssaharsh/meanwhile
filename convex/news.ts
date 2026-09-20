@@ -1,4 +1,4 @@
-import { internalAction, internalQuery, internalMutation } from "./_generated/server";
+import { action, internalAction, internalQuery, internalMutation } from "./_generated/server";
 import type { ActionCtx } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
@@ -71,6 +71,17 @@ function clean(title: unknown): string | null {
   return trimHeadline(title);
 }
 
+/** A photo, gallery or lightbox page — a caption is not a headline. */
+function isGalleryUrl(url: unknown): boolean {
+  if (typeof url !== "string") return false;
+  try {
+    const path = new URL(url).pathname.toLowerCase();
+    return /(^|\/)(image|images|photo|photos|gallery|galleries|album|slideshow|lightbox)(\d*)(\/|\.|$)/.test(path);
+  } catch {
+    return false;
+  }
+}
+
 export type Headline = { title: string; url?: string; cached: boolean };
 
 // Today's headline for a place, from cache when it's fresh enough.
@@ -120,7 +131,9 @@ export async function lookupHeadline(
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       query: `${place} today`,
-      limit: 1,
+      // Three, not one: the first result is sometimes a photo page rather than an article,
+      // and asking for a few costs the same one search. We still keep exactly one.
+      limit: 3,
       // News only. A web fallback put "Santorini vacation highlights and stunning views -
       // Facebook" on air as today's headline: a web result is a page title, not news.
       sources: [{ type: "news" }],
@@ -143,7 +156,12 @@ export async function lookupHeadline(
 
   // v2 keys `data` by source. No news in the past day means no headline — never a web
   // page title passed off as one.
-  const top = j?.data?.news?.[0] ?? null;
+  //
+  // Even inside the news source, an image-gallery page slips through: Santoríni's top result
+  // was "Part of a fresco in a sanctuary." from a photo page on volcanodiscovery.com, which
+  // reads on the news tab as though the channel thinks that is today's news. The URL says
+  // what the page is, so take the first result whose URL is not a picture.
+  const top = (j?.data?.news ?? []).find((r: any) => clean(r?.title) && !isGalleryUrl(r?.url)) ?? null;
   const title = clean(top?.title);
   if (!title) {
     console.warn(`[meanwhile] no headline found for ${place} — caching the miss for 1h`);
@@ -224,6 +242,42 @@ export const forget = internalMutation({
 /** A country story's headline. The country click owns its own budget, so a globe click can
  *  never starve the on-air headline. Scheduled rather than awaited when the story came out of
  *  our own cache, because that path runs inside a mutation and must stay instant. */
+/** Fill in headlines for the places on the channel that don't have one yet.
+ *
+ *  Demand-driven like everything else here: it runs when a viewer opens the News tab, not on
+ *  the cron. Each place is cached (and its misses are cached), so the second person to open
+ *  the tab costs nothing, and the whole thing sits under the public search budget.
+ */
+export const fillForChannel = action({
+  args: { max: v.optional(v.number()) },
+  handler: async (ctx, { max }): Promise<{ looked: number; found: number }> => {
+    const places: { place: string; country: string }[] = await ctx.runQuery(internal.news.channelPlaces, {});
+    let looked = 0;
+    let found = 0;
+    for (const p of places.slice(0, max ?? 6)) {
+      const hit = await ctx.runQuery(internal.news.cached, { place: p.place });
+      // A row exists (even an empty one) means we have asked recently enough.
+      if (hit && Date.now() - hit.at < MISS_TTL_MS) continue;
+      looked++;
+      const h = await lookupHeadline(ctx, { place: p.place, country: p.country, budget: "firecrawlSearch:news" });
+      if (h) found++;
+    }
+    return { looked, found };
+  },
+});
+
+/** The places the channel is watching, for the fill above. */
+export const channelPlaces = internalQuery({
+  args: {},
+  handler: async (ctx): Promise<{ place: string; country: string }[]> => {
+    const cams = await ctx.db
+      .query("cameras")
+      .withIndex("by_active", (q) => q.eq("active", true))
+      .collect();
+    return cams.map((c) => ({ place: c.name, country: c.country }));
+  },
+});
+
 export const attachToStory = internalAction({
   args: { storyId: v.id("stories"), place: v.string(), country: v.string() },
   handler: async (ctx, { storyId, place, country }): Promise<void> => {

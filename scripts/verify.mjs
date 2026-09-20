@@ -212,6 +212,12 @@ assert(trimHeadline(styledPost) === "Ida Odinga", "a post's styled title run is 
 assert(trimHeadline("Dr. Ida Odinga unveils memorial committee. It meets next week.") === "Dr. Ida Odinga unveils memorial committee.", "cuts at the first sentence break, not at 'Dr.'");
 assert(trimHeadline("U.S. Senate passes budget. More to follow.") === "U.S. Senate passes budget.", "'U.S.' is not a sentence break");
 assert(trimHeadline("The week in Switzerland") === "The week in Switzerland", "a clean headline is left alone");
+assert(
+  trimHeadline("\u{1F534}\u{1F535}Alianza Lima vs. Fluminense EN VIVO") === "Alianza Lima vs. Fluminense EN VIVO",
+  "a live-blog title's emoji is stripped — we have no emoji face, so it drew as a box",
+);
+assert(trimHeadline("\u{26BD}\u{FE0F} Troms\u00f8 signs Larsen \u{1F1F3}\u{1F1F4}") === "Troms\u00f8 signs Larsen", "flags, joiners and variation selectors go with them");
+assert(trimHeadline("\u{1F44D}") === null, "a title that is only emoji is not a headline");
 const runOn = trimHeadline("Word ".repeat(60).trim());
 assert(runOn.length <= 121 && runOn.endsWith("…") && !runOn.includes("Wor…"), "a run-on with no break is capped at a word boundary");
 

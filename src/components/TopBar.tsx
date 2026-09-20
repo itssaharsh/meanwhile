@@ -80,6 +80,7 @@ export function TopBar({
   backAt = null,
   reconnectAttempt = 1,
   deliveryChip,
+  chair,
   reduced: forceReduced,
   onAsk,
   onSend,
@@ -96,6 +97,9 @@ export function TopBar({
   backAt?: string | null;
   reconnectAttempt?: number;
   deliveryChip?: ReactNode;
+  /** Set while the viewer is holding the director's chair. Deliberately NOT amber: amber says
+   *  a frame is on air, and this says who chose it — a different claim. */
+  chair?: { untilMs: number; onRelease: () => void } | null;
   reduced?: boolean;
   onAsk?: () => void;
   onSend?: () => void;
@@ -243,6 +247,27 @@ export function TopBar({
           aria-label and the tooltip, so the name is still the one COPY.md wrote — it is just
           no longer taking room the place name needs. */}
       <div className="flex shrink-0 items-center gap-2 max-sm:gap-1.5">
+        {chair && (
+          <button
+            type="button"
+            onClick={chair.onRelease}
+            title={`${ADDED.chairHeld.text(formatAge(Math.max(0, chair.untilMs - Date.now())))} · ${ADDED.chairRelease.text}`}
+            aria-label={`${ADDED.chairHeld.text(formatAge(Math.max(0, chair.untilMs - Date.now())))} · ${ADDED.chairRelease.text}`}
+            className={cn(
+              "hit-44 inline-flex h-6 shrink-0 items-center gap-1.5 rounded-sm border border-line-strong bg-surface-2 px-2 font-mono text-[10px] leading-none tracking-[0.12em] whitespace-nowrap text-ink-muted uppercase",
+              "[transition:color_150ms_var(--ease-out-quint)] hover:text-ink",
+              // Same degrade ladder as the two actions beside it: below 900 the words move into
+              // the label and the tooltip, and the chip keeps only the countdown — which is the
+              // part that changes. Hiding it outright left a phone holding the chair with no way
+              // to see that it held it, and no way to hand it back.
+              "max-[899px]:size-[44px] max-[899px]:justify-center max-[899px]:rounded-md max-[899px]:px-0",
+            )}
+          >
+            <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-ink-muted max-[899px]:hidden" />
+            <span className="max-[899px]:hidden">{ADDED.chairHeld.text(formatAge(Math.max(0, chair.untilMs - Date.now())))}</span>
+            <span className="hidden tnum max-[899px]:inline">{formatAge(Math.max(0, chair.untilMs - Date.now()))}</span>
+          </button>
+        )}
         <Button
           variant="default"
           size="md"

@@ -1,7 +1,7 @@
 import { forwardRef, useState } from "react";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
-import { COPY } from "@/lib/copy";
+import { COPY, ADDED } from "@/lib/copy";
 import { formatScore, freshness, freshnessText, isVerified } from "@/lib/format";
 import { useReduced } from "@/lib/hooks";
 import type { Snapshot } from "@/lib/types";
@@ -42,11 +42,14 @@ export const RailItem = forwardRef<
   const verified = isVerified(f);
   const score = s.score != null ? formatScore(s.score) : "—.—";
 
-  // Accessible name, composed from COPY.md §2/§4 strings.
+  // Accessible name, composed from COPY.md §2/§4 strings. The last clause is what the click
+  // DOES: the running order is also the control that changes the camera, and a tile that only
+  // announces its rank and score never says so.
   const label = [
     onAir ? COPY.rail.onAirTag : COPY.rail.rank(rank),
     `${COPY.rail.scoreChip(score, s.place.name)}, ${s.place.country}`,
     freshnessText(f),
+    onAir ? ADDED.chairOnAir.text : ADDED.chairTake.text,
   ].join(". ");
 
   return (
@@ -96,12 +99,25 @@ export const RailItem = forwardRef<
         {onAir ? <span className="size-1.5 rounded-full bg-accent-ink" /> : rank}
       </span>
 
-      {onAir && (
+      {onAir ? (
         <span
           aria-hidden="true"
           className="absolute top-1.5 right-1.5 rounded-sm bg-canvas px-1 py-px font-mono text-[9px] leading-[1.3] tracking-[0.14em] text-accent uppercase max-sm:bg-transparent max-sm:px-0 max-sm:text-[8px]"
         >
           {COPY.rail.onAirTag}
+        </span>
+      ) : (
+        /* The same corner the ON AIR tag owns, holding the thing that puts it there. Hover
+           and focus only, and never on a phone, where there is no hover and the result of the
+           tap is immediate anyway. Grey: amber is the frame on air, and this one is not. */
+        <span
+          aria-hidden="true"
+          className={cn(
+            "absolute top-1.5 right-1.5 rounded-sm border border-line-strong bg-canvas px-1 py-px font-mono text-[9px] leading-[1.3] tracking-[0.14em] text-ink uppercase max-sm:hidden",
+            "opacity-0 [transition:opacity_150ms_var(--ease-out-quint)] group-hover/item:opacity-100 group-focus-visible/item:opacity-100 group-data-[hover]/item:opacity-100",
+          )}
+        >
+          {ADDED.chairTake.text}
         </span>
       )}
 

@@ -4,7 +4,7 @@ Every string in the product lives in `src/lib/copy.ts`:
 
 - `COPY` is COPY.md exactly, with its header conventions applied (curly apostrophes, and a
   non-breaking space between each number and its unit).
-- `ADDED` holds the 57 strings COPY.md doesn't have. All of them are approved: "beat {place}
+- `ADDED` holds the 70 strings COPY.md doesn't have. All of them are approved: "beat {place}
   {score}" from the build brief, UI-SPEC.md's wording approved as rendered on 2026-09-19, and
   that day's three copy calls.
 
@@ -58,6 +58,25 @@ All seven were answered by the author; nothing in this file is open.
 7. **Manifest description** is DESIGN.md's: "A live, AI-directed 3D Earth. The planet is the
    only programming."
 
+## Added on 2026-09-21
+
+Thirteen strings, for three things the author found missing: a visitor could not tell what the
+page was, could not change the camera, and could not see the news the channel had already
+gathered. All thirteen are in the generated table at the bottom, under their C-numbers.
+
+- **The intro card (C-13)** does not invent a pitch. `introTitle` and `introBody` are COPY.md
+  §10's own OG title and description — the words already written for anyone who meets this
+  product cold, finally shown to the person who actually arrives. `introHow` is the one rule
+  that makes the colours readable, and it is the only new sentence of the three.
+- **The director's chair (C-01 / C-04 / C-07).** `Put this on air` is the action,
+  `On air now` is the state it produces, `You're directing · {time} left` is the hold and
+  `Give the chair back` ends it. Deliberately not amber, anywhere: amber marks the frame that
+  is on air, and a chip about who chose it is not that frame.
+- **The news tab (C-16).** `News` names the tab; `No headlines yet` and its body cover the
+  honest empty case, which is real — a place with nothing published today gets no row rather
+  than a filler one. `Looking for today's news…` covers the one lookup, which runs when the
+  tab is opened and not before.
+
 ## Where COPY.md overrode UI-SPEC's inline copy
 
 - **TopBar chyron:** COPY's three parts replace `ON AIR · Cutting to Reykjavík — 8.4`.
@@ -80,7 +99,7 @@ All seven were answered by the author; nothing in this file is open.
 - **Story no-result:** §5 No camera found. **Country no-result:** §5 All stale, plus All wrong
   place.
 
-## ADDED — 57 strings, approved
+## ADDED — 70 strings, approved
 
 | key | as rendered | source | where |
 |---|---|---|---|
@@ -162,13 +181,17 @@ with its agreements corrected and the numeral kept.
 | `COPY.countryEmpty.misplacedBody` | 1 frame came back and 1 was filmed somewhere else — it was Times Square. Wrong place, so it’s out. | 3 frames came back and 3 were filmed somewhere else — one was Times Square. Wrong place, so they’re out. |
 | `ADDED.chatSummary` | 1 step · 2.1 s | 3 steps · 2.1 s |
 
-## Strings beyond COPY.md (57)
+## Strings beyond COPY.md (70)
 
 Each rendered with the arguments its real call site passes.
 
 | key | renders as | source | used by |
 | --- | --- | --- | --- |
 | `beat` | beat Reykjavík 8.1 | build brief | C-10 beat line |
+| `chairHeld` | You're directing · 4 min left | author request 2026-09-21 | C-01 ?state=chair |
+| `chairOnAir` | On air now | author request 2026-09-21 — the frame already on air | C-07 / C-04 |
+| `chairRelease` | Give the chair back | author request 2026-09-21 | C-01 ?state=chair |
+| `chairTake` | Put this on air | author request 2026-09-21 — viewer takes the director's chair | C-07 / C-04 |
 | `chatChipAria` | Go to Reykjavík, Iceland — verified live | UI-SPEC C-05 a11y | C-05 place chip aria-label |
 | `chatFirstBody` | Where it’s light, what scored highest, what the director just cut away from. | UI-SPEC C-11 chat first-run | C-11 ?state=empty-chat-first |
 | `chatFirstTitle` | Ask anything about right now | UI-SPEC C-11 chat first-run | C-11 ?state=empty-chat-first |
@@ -188,6 +211,7 @@ Each rendered with the arguments its real call site passes.
 | `dockClose` | Close | UI-SPEC T-06 (unlabelled close button) | C-03 close button aria-label |
 | `dockReturnPill` | Now · Cape Town | UI-SPEC C-03 cut-while-open | C-03 ?state=open-cut |
 | `dockTabAsk` | Ask | UI-SPEC §4 layout | C-03 tab |
+| `dockTabNews` | News | author request 2026-09-21 — the third dock tab | C-16 ?state=news |
 | `dockTabStory` | Story | UI-SPEC §4 layout | C-03 tab |
 | `fetchCancel` | Cancel | UI-SPEC C-08 loading | C-08 ?state=fetch-slow |
 | `fetchCancelAria` | Cancel the fetch for Switzerland | UI-SPEC C-08 a11y | C-08 Cancel aria-label |
@@ -199,9 +223,17 @@ Each rendered with the arguments its real call site passes.
 | `globeLostBody` | Countries are still clickable from the list. | UI-SPEC C-02 error | C-02 ?state=contextlost |
 | `globeRestore` | Restore picture | UI-SPEC C-02 error | C-02 ?state=contextlost |
 | `globeUnavailable` | Picture unavailable on this device | UI-SPEC C-02 error | C-02 ?state=contextlost-twice |
+| `introBody` | An AI director watches real webcams around the world and cuts the best one on air. True day and night on a spinning globe. Every frame checked for age and place before it airs. | COPY.md §10 description | C-13 ?state=intro |
+| `introHow` | Teal means we read the frame's age from the source. Grey means we could not, and we say so. | author request 2026-09-21 — the one rule a judge needs to read the colours | C-13 ?state=intro |
+| `introPick` | Or pick a country | author request 2026-09-21 | C-13 ?state=intro |
+| `introStart` | Start watching | author request 2026-09-21 | C-13 ?state=intro |
+| `introTitle` | Meanwhile — the planet, on air | COPY.md §10 OG title | C-13 ?state=intro |
 | `mailBounced` | Bounced · 20:38 UTC | UI-SPEC C-09, shaped like COPY §7's chips | C-09 ?state=mail-bounced |
 | `mailDone` | Done | UI-SPEC C-09 success | C-09 ?state=mail-delivered |
 | `mailUnconfirmed` | No confirmation — check spam | UI-SPEC C-09 | C-09 ?state=mail-unconfirmed |
+| `newsEmptyBody` | Nothing has been published today for the places on air. This fills in as the channel moves. | author request 2026-09-21 | C-16 ?state=news-empty |
+| `newsEmptyTitle` | No headlines yet | author request 2026-09-21 | C-16 ?state=news-empty |
+| `newsLoading` | Looking for today's news… | author request 2026-09-21 | C-16 ?state=news-loading |
 | `notFoundBetween` | The channel is between cuts. | UI-SPEC C-12 empty | C-12 ?state=404-nochannel |
 | `notFoundLive` | Right now we’re in Tromsø. | copy call — UI-SPEC C-12 live line, completed | C-12 ?state=404 |
 | `notFoundPick` | Pick a country | UI-SPEC C-12 secondary action | C-12 secondary button |

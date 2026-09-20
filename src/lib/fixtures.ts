@@ -3,6 +3,7 @@
 // wrote for them. Scores and ages are set so every freshness state appears at least once, and
 // so the on-air numbers match COPY.md's own examples (Tromsø 9.6, Santoríni 9.0, Queenstown 3.8).
 import type { FetchRow, MailState, Place, Snapshot, VerifiedChip } from "./types";
+import type { NewsItem } from "@/components/NewsPanel";
 
 export const NOW = Date.now();
 const MIN = 60 * 1000;
@@ -263,6 +264,73 @@ export const MAIL = {
   unconfirmed: { status: "unconfirmed", messageId: MESSAGE_ID, at: NOW - 90000 },
 } satisfies Record<string, MailState>;
 export const MAIL_ADDRESS = "sam@example.com";
+
+// C-16 — the news tab. Real headlines the channel pulled for these places, with the source
+// each one came from, so the panel can be judged on the shape the live data actually has:
+// one place on air, a place with a frame but no cut, and a country someone pulled up (no
+// frame behind it, so its row is text only). Ages span the panel's whole range.
+export const NEWS: NewsItem[] = [
+  {
+    key: "cam:tromso",
+    place: "Tromsø",
+    country: "Norway",
+    headline: "Confirmed Transfer: Tromsø signs Heine Larsen.",
+    headlineUrl: "https://onefootball.com/en/transfers/43472472",
+    at: ago(4),
+    snapshotId: "s-tromso",
+    onAir: true,
+  },
+  {
+    key: "cam:new-taipei",
+    place: "New Taipei",
+    country: "Taiwan",
+    headline: "Marchers seek to solve stray problem",
+    headlineUrl: "https://www.taipeitimes.com/News/taiwan/archives/2026/09/20/2003864581",
+    at: ago(9),
+    snapshotId: "s-new-taipei",
+    onAir: false,
+  },
+  {
+    key: "cam:reykjavik",
+    place: "Reykjavík",
+    country: "Iceland",
+    headline: "Word Of The Issue: Rannsaka",
+    headlineUrl: "https://grapevine.is/icelandic-culture/history-language/2026/09/20/word-of-the-issue-rannsaka/",
+    at: ago(23),
+    snapshotId: "s-reykjavik",
+    onAir: false,
+  },
+  {
+    key: "story:lima",
+    place: "Lima",
+    country: "Peru",
+    headline: "Alianza Lima vs. Fluminense EN VIVO: horario y dónde ver el partido de HOY por la Brasil Cup 2026",
+    headlineUrl: "https://www.exitosanoticias.pe/deportes/alianza-lima-fluminense-en-vivo",
+    at: ago(57),
+    snapshotId: null,
+    onAir: false,
+  },
+  {
+    key: "cam:kyoto",
+    place: "Kyoto",
+    country: "Japan",
+    headline: "Watch Okayama v Kyoto Live Stream Online",
+    headlineUrl: "https://www.dazn.com/en-JP/home/ay7iwoilfn3s017p6gfked5on3",
+    at: ago(102),
+    snapshotId: "s-kyoto",
+    onAir: false,
+  },
+  {
+    key: "story:coquimbo",
+    place: "Coquimbo",
+    country: "Chile",
+    headline: "Air quality in Coquimbo",
+    headlineUrl: "https://www.iqair.com/om/air-quality/chile/coquimbo/coquimbo",
+    at: ago(188),
+    snapshotId: null,
+    onAir: false,
+  },
+];
 
 // C-05 — model output, not product copy. Places are marked as links to `#place:<snapshotId>`
 // so the answer renderer can turn each one into a place chip.

@@ -14,13 +14,17 @@ export function StoryPanel({
   onAirId,
   onRetry,
   onPickCountry,
+  ...actions
 }: {
   fetch: CountryFetch;
   now: number;
   onAirId: string | null;
   onRetry?: () => void;
   onPickCountry?: (country: string) => void;
-}) {
+  // Deliberately no onPutOnAir: a country story is a `stories` row, not a frame from the
+  // camera pool, so there is nothing for the director to cut to. Offering the button here
+  // would be a control that always fails.
+} & Pick<Parameters<typeof StoryCard>[0], "onAsk" | "onSend" | "onFrame">) {
   const { row, outcome, story, chips, counts, country, timedOut } = f;
 
   if (!country || !row) {
@@ -30,7 +34,7 @@ export function StoryPanel({
   // Still running: one named stage at a time, never a spinner.
   if (!outcome) return <CountryFetchProgress row={row} />;
 
-  if (story) return <StoryCard story={story} now={now} onAirId={onAirId} />;
+  if (story) return <StoryCard story={story} now={now} onAirId={onAirId} {...actions} />;
 
   const chipRow = chips.length > 0 ? <VerifiedChips chips={chips} now={now} onPick={onPickCountry} /> : undefined;
   const offer = chipRow ? { chipsLabel: ADDED.tryThese.text, chips: chipRow } : {};

@@ -41,6 +41,10 @@ export default defineSchema({
   cut: defineTable({
     snapshotId: v.id("snapshots"),
     cameraId: v.id("cameras"),
+    // Who chose this frame. Absent means the director, which is every cut written before
+    // viewers could take the chair. A viewer's choice holds for CHAIR_HOLD_MS and then the
+    // director takes over again — the channel has a director, and it gets its chair back.
+    by: v.optional(v.string()), // "director" | "viewer"
     at: v.number(),
   }),
 

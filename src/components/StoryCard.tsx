@@ -34,6 +34,7 @@ export function StoryCard({
   onAsk,
   onSend,
   onFrame,
+  onPutOnAir,
 }: {
   story: Snapshot | null;
   state?: "idle" | "loading" | "fetching";
@@ -46,6 +47,8 @@ export function StoryCard({
   onAsk?: () => void;
   onSend?: () => void;
   onFrame?: (s: Snapshot) => void;
+  /** Take the director's chair: put THIS frame on air. Absent = the channel is read-only here. */
+  onPutOnAir?: (s: Snapshot) => void;
 }) {
   const [broken, setBroken] = useState(false);
 
@@ -97,6 +100,7 @@ export function StoryCard({
           {COPY.errors.frameFailed.title}
         </div>
       ) : (
+        <div className="relative">
         <button
           type="button"
           data-hover={forceHover || undefined}
@@ -115,6 +119,25 @@ export function StoryCard({
             </span>
           )}
         </button>
+        {/* The control that answers "can I change the camera?". It sits on the frame, opposite
+            the ON AIR tag, because the tag is the state this button produces. It is never amber:
+            amber marks the frame that IS on air, and this one is not. The frame is itself a
+            button (it opens full size), so this cannot nest inside it. */}
+        {onPutOnAir &&
+          (onAir ? (
+            <span className="absolute top-2 right-2 rounded-sm border border-line-strong bg-canvas px-2 py-1 font-mono text-[10px] leading-[1.3] tracking-[0.12em] text-ink-muted uppercase">
+              {ADDED.chairOnAir.text}
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onPutOnAir(s)}
+              className="hit-44 absolute top-2 right-2 rounded-sm border border-line-strong bg-canvas px-2 py-1 font-mono text-[10px] leading-[1.3] tracking-[0.12em] text-ink uppercase [transition:background-color_150ms_var(--ease-out-quint),border-color_150ms_var(--ease-out-quint)] hover:border-ink-muted hover:bg-surface-1"
+            >
+              {ADDED.chairTake.text}
+            </button>
+          ))}
+        </div>
       )}
 
       {/* place block */}

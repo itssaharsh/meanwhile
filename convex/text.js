@@ -22,6 +22,13 @@ const ABBREVIATIONS = new Set(
     .filter(Boolean),
 );
 
+// Sports desks and live-blog accounts open a title with colour: "🔴🔵Alianza Lima vs.
+// Fluminense EN VIVO …". Our type stack has no emoji face, so each one draws as a .notdef
+// box on the card — and a box in front of a headline reads as a broken string, not as a
+// flourish. Strip the pictographs (and the joiners, flags and skin tones that travel with
+// them) and keep the words.
+const PICTOGRAPHIC = /[\p{Extended_Pictographic}\p{Regional_Indicator}\u{1F3FB}-\u{1F3FF}\u{FE0E}\u{FE0F}\u{200D}\u{20E3}]/gu;
+
 // Mathematical Alphanumeric Symbols: 𝐀 (U+1D400) … 𝟿 (U+1D7FF).
 const isStyled = (cp) => cp >= 0x1d400 && cp <= 0x1d7ff;
 const isPlainLetter = (ch) => /[A-Za-zÀ-ɏ]/.test(ch);
@@ -75,6 +82,7 @@ export function trimHeadline(raw, max = MAX_HEADLINE_LEN) {
     .normalize("NFKC")
     .replace(/[\x00-\x1f\x7f]/g, " ")
     .replace(/[<>]/g, "")
+    .replace(PICTOGRAPHIC, "")
     .replace(/\s+/g, " ")
     .trim();
   t = firstSentence(t);
