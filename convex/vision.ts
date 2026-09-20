@@ -134,6 +134,13 @@ function classify(err: any, now: number): Verdict {
   // daily allowance is spent" from "slow down for a minute". Treating a per-minute limit
   // as daily would let one 11-camera burst mark the whole chain dead until midnight.
   if (status === 429 || /RESOURCE_EXHAUSTED|exceeded your current quota/i.test(blob)) {
+    // A billing problem, not a rate limit: OpenAI answers 429 insufficient_quota /
+    // credit_balance_exhausted when the balance is zero. It reads identically to a spent daily
+    // allowance in the logs, which is exactly how an unfunded account hides behind a working
+    // fallback — so it gets its own reason and says the word "credit".
+    if (/insufficient_quota|credit_balance_exhausted|no credits remaining/i.test(blob)) {
+      return { kind: "rotate", mark: { until: nextUtcMidnight(now), reason: "no-credit" } };
+    }
     if (/limit:\s*0\b/.test(blob)) {
       return { kind: "rotate", mark: { until: nextUtcMidnight(now), reason: "zero-limit" } };
     }
@@ -215,6 +222,10 @@ export async function visionComplete(args: Args): Promise<VisionResult> {
     const chain = buildChain(p, live);
     if (!chain.length) {
       attempts.push({ model: `${p.label}:*`, outcome: "no usable model on this account" });
+      console.warn(
+        `[meanwhile] ${args.label}: ${p.label} has none of its chain on this account ` +
+          `(${(p.chain ?? []).join(", ")}) — moving on`,
+      );
       continue;
     }
 
