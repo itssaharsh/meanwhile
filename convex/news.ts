@@ -229,7 +229,11 @@ export const attachToStory = internalAction({
   handler: async (ctx, { storyId, place, country }): Promise<void> => {
     const story = await ctx.runQuery(internal.stories.get, { storyId });
     if (!story || story.headline) return;
-    const h = await lookupHeadline(ctx, { place, country, budget: "firecrawlSearch:public" });
+    // Same two-step as the ladder: the camera's town first, the country when the town has no
+    // news of its own.
+    const h =
+      (await lookupHeadline(ctx, { place, country, budget: "firecrawlSearch:public" })) ??
+      (place !== country ? await lookupHeadline(ctx, { place: country, country, budget: "firecrawlSearch:public" }) : null);
     if (h) await ctx.runMutation(internal.stories.setHeadline, { storyId, headline: h.title, headlineUrl: h.url });
   },
 });

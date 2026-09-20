@@ -94,7 +94,8 @@ export const forget = internalMutation({
       : await ctx.db.query("stories").collect();
     const doomed = rows.filter((r) => !host || r.sourceImageUrl.includes(host));
     for (const r of doomed) {
-      await ctx.storage.delete(r.storageId);
+      // The prune cron may already have taken the blob; the row still has to go.
+      await ctx.storage.delete(r.storageId).catch(() => undefined);
       await ctx.db.delete(r._id);
     }
     return { forgotten: doomed.map((r) => `${r.country}: ${r.place}`) };

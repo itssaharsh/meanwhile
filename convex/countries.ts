@@ -545,7 +545,15 @@ async function runLadder(
     // camera actually shows, falling back to the country, because "Bogotá today" returns
     // Bogotá's news and "Colombia today" returns the wire.
     const place = placeName(best.cand.cameraName) ?? common;
-    const news: Headline | null = await lookupHeadline(ctx, { place, country: common, budget: "firecrawlSearch:public" });
+    // Ask for the town, fall back to the country. "Bogotá today" returns Bogotá's news, but a
+    // camera is often in somewhere like Thuwal or Cha-am, where "today" returns nothing at all
+    // — and a story with no headline was the result. Both lookups are cached, including the
+    // miss, so the second one costs a search once per place and never again that hour.
+    const news: Headline | null =
+      (await lookupHeadline(ctx, { place, country: common, budget: "firecrawlSearch:public" })) ??
+      (place !== common
+        ? await lookupHeadline(ctx, { place: common, country: common, budget: "firecrawlSearch:public" })
+        : null);
     const storageId = await ctx.storage.store(new Blob([best.cand.bytes], { type: best.cand.type }));
     const storyId: Id<"stories"> = await ctx.runMutation(internal.stories.put, {
       country,
