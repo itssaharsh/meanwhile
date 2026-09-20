@@ -253,6 +253,23 @@ export function windyFrameUrl(id) {
   return `https://imgproxy.windy.com/_/full/plain/current/${id}/original.jpg`;
 }
 
+/** Page titles that are not a camera. The open-web rung scrapes whatever the search returns,
+ *  and a stage line reading "Pulling frame 6 of 8 · Today for iPhone - App Store" is absurd on
+ *  screen — the frame is rejected a moment later anyway, so the name adds nothing but noise.
+ *  When a title looks like a storefront, a login wall or a cookie notice, the stage says
+ *  nothing rather than saying that. */
+const NOT_A_CAMERA_NAME =
+  /app\s?store|google\s?play|download|sign\s?in|log\s?in|subscribe|cookie|privacy|terms|404|not found|error|untitled|home\s?page|buy now|shop|cart|advert/i;
+
+export function cameraTitle(title) {
+  const t = String(title ?? "").trim();
+  if (!t || t.length < 3 || t.length > 60) return null;
+  if (NOT_A_CAMERA_NAME.test(t)) return null;
+  // A title that is mostly punctuation or has no letters is not a place either.
+  if (!/\p{L}/u.test(t)) return null;
+  return t;
+}
+
 /** The place a camera's name is about. Index cameras are named for the operator's benefit —
  *  "Prizren › West: Ambient Restaurant", "Lima: Av Javier prado" — and the slot this lands in
  *  is set in Newsreader at 18px, where the qualifiers read as noise. The full name still

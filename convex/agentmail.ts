@@ -1,4 +1,4 @@
-import { mutation, internalAction, internalQuery, internalMutation } from "./_generated/server";
+import { mutation, query, internalAction, internalQuery, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { envOrNull, missingKey, escapeHtml } from "./lib";
@@ -44,6 +44,61 @@ export const subscribe = mutation({
     // Send the current best moment right away as a confirmation.
     await ctx.scheduler.runAfter(0, internal.agentmail.sendBestTo, { email: addr });
     return { ok: true };
+  },
+});
+
+/** Remember which message a subscriber is waiting on. */
+export const noteSend = internalMutation({
+  args: { email: v.string(), messageId: v.string() },
+  handler: async (ctx, { email, messageId }): Promise<void> => {
+    const row = await ctx.db
+      .query("subscribers")
+      .withIndex("by_email", (q) => q.eq("email", email))
+      .first();
+    if (row) await ctx.db.patch(row._id, { lastMessageId: messageId, lastSentAt: Date.now() });
+  },
+});
+
+/**
+ * What actually happened to the mail we just sent, for C-09's delivery chip.
+ *
+ * The states are the ones AgentMail can actually prove, and no more: queued until the send
+ * call returns, accepted once it has a message id, then whatever the webhook says. "Delivered"
+ * here means the recipient's mail server accepted it — not that a human has seen it, which is
+ * why the copy never says "Delivered" on its own.
+ */
+export const deliveryFor = query({
+  args: { email: v.string() },
+  handler: async (
+    ctx,
+    { email },
+  ): Promise<{ status: "queued" | "accepted" | "delivered" | "bounced" | "unconfirmed"; messageId: string; at: number } | null> => {
+    const addr = email.trim().toLowerCase();
+    const sub = await ctx.db
+      .query("subscribers")
+      .withIndex("by_email", (q) => q.eq("email", addr))
+      .first();
+    if (!sub) return null;
+    if (!sub.lastMessageId) return { status: "queued", messageId: "", at: sub.at };
+
+    const events = await ctx.db
+      .query("mailEvents")
+      .withIndex("by_messageId", (q) => q.eq("messageId", sub.lastMessageId))
+      .collect();
+    const latest = events.sort((a, b) => b.at - a.at)[0];
+    if (!latest) {
+      // Accepted by AgentMail. Without the webhook secret no event can ever arrive, so after a
+      // couple of minutes say we cannot confirm rather than leaving a spinner on "accepted".
+      const waited = Date.now() - (sub.lastSentAt ?? sub.at);
+      return { status: waited > 120_000 ? "unconfirmed" : "accepted", messageId: sub.lastMessageId, at: sub.lastSentAt ?? sub.at };
+    }
+    const type = latest.eventType.toLowerCase();
+    const status = type.includes("delivered")
+      ? "delivered"
+      : type.includes("bounce") || type.includes("reject") || type.includes("fail")
+        ? "bounced"
+        : "accepted";
+    return { status, messageId: sub.lastMessageId, at: latest.at };
   },
 });
 
@@ -143,6 +198,8 @@ export const sendBestTo = internalAction({
     const messageId: string | null = body?.message_id ?? null;
     const threadId: string | null = body?.thread_id ?? null;
     console.log(`[meanwhile] emailed ${email} — message_id ${messageId ?? "(not returned)"}, thread_id ${threadId ?? "-"}`);
+    // The chip follows this id; without it the UI could only ever claim "sent".
+    if (messageId) await ctx.runMutation(internal.agentmail.noteSend, { email, messageId });
     return { messageId, threadId };
   },
 });

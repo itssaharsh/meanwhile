@@ -15,6 +15,8 @@ import { useCountryFetch } from "./useCountryFetch";
 import { StoryPanel } from "./StoryPanel";
 import { AskPanel } from "@/components/AskPanel";
 import { useAsk } from "./useAsk";
+import { useSubscribe } from "./useSubscribe";
+import { SubscribeSheet } from "@/components/SubscribeSheet";
 import type { Snapshot } from "@/lib/types";
 import COUNTRIES from "@/data/countries.json";
 
@@ -158,6 +160,7 @@ export function Channel({ children }: { children?: ReactNode }) {
   // so the scroll position survives with it.
   const askCandidates = useMemo(() => (onAir ? [onAir, ...feed.filter((f) => f.snapshotId !== onAir.snapshotId)] : feed), [onAir, feed]);
   const chat = useAsk(askCandidates);
+  const mail = useSubscribe();
 
   // T-05: a place named in an answer flies the globe and opens that Story — without clearing
   // the thread behind it.
@@ -176,7 +179,7 @@ export function Channel({ children }: { children?: ReactNode }) {
 
   return (
     <div className="fixed inset-0 flex flex-col bg-canvas">
-      <TopBar state={topBarState} onAir={onAir} previous={previous} now={now} onAsk={() => { setTab("ask"); setDockOpen(true); }} />
+      <TopBar state={topBarState} onAir={onAir} previous={previous} now={now} onAsk={() => { setTab("ask"); setDockOpen(true); }} onSend={mail.show} />
 
       <div className="relative flex min-h-0 flex-1">
         {/* The planet, always mounted, always turning. */}
@@ -220,6 +223,17 @@ export function Channel({ children }: { children?: ReactNode }) {
           onReturn={returnToAir}
         />
       </div>
+
+      <SubscribeSheet
+        open={mail.open}
+        onOpenChange={(o) => (o ? mail.show() : mail.close())}
+        onAir={onAir}
+        state={mail.state}
+        email={mail.email}
+        mail={mail.mail}
+        onSubmit={mail.submit}
+        onDone={mail.close}
+      />
 
       <FeedRail
         items={feed}

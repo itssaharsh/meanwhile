@@ -48,6 +48,10 @@ export default defineSchema({
     email: v.string(),
     confirmed: v.boolean(),
     at: v.number(),
+    // The send we are waiting on, so the delivery chip has something to follow. AgentMail's
+    // webhook reports against the message id, and without this there is nothing to join on.
+    lastMessageId: v.optional(v.string()),
+    lastSentAt: v.optional(v.number()),
   }).index("by_email", ["email"]),
 
   // One row per country click, written stage by stage as the fetch runs; the story panel

@@ -21,6 +21,7 @@ import {
   contradictsSun,
   windyFrameUrl,
   placeName,
+  cameraTitle,
 } from "./frames.js";
 
 // Click a country -> find a live view of it now.
@@ -195,15 +196,15 @@ async function scrapePage(key: string, page: string, country: string, city: stri
   const pageUrl: string = meta.sourceURL ?? meta.url ?? page;
   // A page title becomes the place name under --ff-place, where "Webcams in Nairobi" reads as
   // a directory listing rather than a city. Strip the wrapper and keep the place.
-  const title: string | null =
+  const title: string | null = cameraTitle(
     typeof meta.title === "string"
       ? meta.title
           .split(/[|–—]/)[0]
           .trim()
           .replace(/^(live\s+)?web\s?cams?\s+(in|of|from)\s+/i, "")
           .trim()
-          .slice(0, 60) || null
-      : null;
+      : null,
+  );
 
   // An aggregator's page is usually a video player surrounded by thumbnails of other
   // countries' cameras; the only still of THIS camera is the card image. It is the one frame

@@ -22,6 +22,7 @@ import {
   windyFrameUrl,
   countrySlug,
   placeName,
+  cameraTitle,
 } from "../convex/frames.js";
 import { trimHeadline } from "../convex/text.js";
 
@@ -173,6 +174,10 @@ assert(placeName("Prizren \u203a West: Ambient Restaurant") === "Prizren", "a ca
 assert(placeName("Lima: Av Javier prado") === "Lima", "so does the street it points at");
 assert(placeName("Gulf of Siam at Cha-am") === "Gulf of Siam at Cha-am", "a name with no qualifier is left alone");
 assert(placeName("") === null, "and an empty name is no name");
+assert(cameraTitle("\u200eToday for iPhone - App Store") === null, "a storefront is not a camera name");
+assert(cameraTitle("Sign in to continue") === null, "nor is a login wall");
+assert(cameraTitle("Dahab: Na Lagunu") === "Dahab: Na Lagunu", "a real camera name survives");
+assert(cameraTitle("   ") === null, "and an empty title is no name");
 assert(
   frameAgeMs("Sat, 19 Sep 2026 23:00:00 GMT", "Sat, 19 Sep 2026 23:00:00 GMT") === null,
   "a Last-Modified equal to the response Date is a restamp, not an age",

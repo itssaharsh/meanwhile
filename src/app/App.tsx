@@ -1,4 +1,4 @@
-import { Route, Routes, useLocation } from "react-router";
+import { Route, Routes, useLocation, useNavigate } from "react-router";
 import { NotFound } from "@/components/NotFound";
 import { Kit } from "@/kit/Kit";
 import { Channel } from "./Channel";
@@ -14,14 +14,12 @@ import { useNow } from "@/lib/hooks";
 function NotFoundRoute() {
   const now = useNow(30_000);
   const { onAir } = useChannel();
-  return (
-    <NotFound
-      state={onAir ? "idle" : "error"}
-      onAir={onAir}
-      now={now}
-      onReturn={() => (window.location.href = "/")}
-    />
-  );
+  const navigate = useNavigate();
+  // Routed, not reloaded: a full page load would tear down the globe and the subscriptions,
+  // which is the one thing the shell exists to prevent. The channel keeps running underneath
+  // this page the whole time it is shown.
+  const back = () => navigate("/", { replace: true });
+  return <NotFound state={onAir ? "idle" : "error"} onAir={onAir} now={now} onReturn={back} onPick={back} />;
 }
 
 export function App() {
