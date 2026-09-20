@@ -233,6 +233,8 @@ export function Channel({ children }: { children?: ReactNode }) {
   // is a route change and not a page load: the globe never restarts and the subscriptions never
   // drop, which is the entire reason the shell exists.
   const landing = pathname === "/";
+  // Anything that is neither the landing nor the player is the 404 rendering over this shell.
+  const player = landing || pathname === "/watch";
   const enterChannel = useCallback(() => navigate("/watch"), [navigate]);
 
   // T-05: a place named in an answer flies the globe and opens that Story — without clearing
@@ -276,6 +278,8 @@ export function Channel({ children }: { children?: ReactNode }) {
     <div className="fixed inset-0 flex flex-col bg-canvas">
       <TopBar state={topBarState} onAir={onAir} previous={previous} now={now} onAsk={() => { setTab("ask"); setDockOpen(true); setSnap(62); }}
         onSend={mail.show}
+        actions={player}
+        framing={pathname === "/watch"}
         chair={chair?.by === "viewer" && chair.until ? { untilMs: chair.until, onRelease: () => void releaseChair({}).catch(() => undefined) } : null}
       />
 
@@ -291,6 +295,7 @@ export function Channel({ children }: { children?: ReactNode }) {
             indexed={indexed}
             flyTo={flyTo}
             onCountryClick={openCountry}
+            slate={player}
           />
           {/* The router's outlet renders over the globe, never around it. */}
           {children}

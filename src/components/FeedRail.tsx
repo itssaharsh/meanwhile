@@ -116,8 +116,17 @@ export function FeedRail({
             {COPY.rail.loading(loadingCounts.checked, loadingCounts.total, loadingCounts.scored)}
           </p>
           {Array.from({ length: 6 }, (_, i) => (
-            // static: no sweep, no pulse (C-06 loading)
-            <span key={i} aria-hidden="true" className="mw-skeleton block h-[108px] w-[196px] shrink-0 !rounded-md max-sm:h-[84px] max-sm:w-[168px]" />
+            // The 1400ms opacity pulse C-04's skeletons already use — never a sweep, which
+            // DESIGN.md bans outright. Held static these read as six dead grey boxes rather
+            // than as a running order being built, which is the one thing they exist to say.
+            // The pulse is staggered so the rail reads as filling left to right.
+            <span
+              key={i}
+              aria-hidden="true"
+              data-pulse="true"
+              style={{ animationDelay: `${i * 90}ms` }}
+              className="mw-skeleton block h-[108px] w-[196px] shrink-0 !rounded-md max-sm:h-[84px] max-sm:w-[168px]"
+            />
           ))}
         </div>
       );

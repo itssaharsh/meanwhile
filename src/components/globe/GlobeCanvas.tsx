@@ -90,6 +90,10 @@ export type GlobeProps = {
   forceLost?: boolean;
   /** /_kit: the state after a restore has failed too. */
   forceUnavailable?: boolean;
+  /** False on a route that is not the player. The canvas keeps its slate mounted and merely
+   *  fades it to opacity 0 once the textures land, so "acquiring picture" sat in the DOM of
+   *  every route — including the 404, whose entire job is to say a thing does not exist. */
+  slate?: boolean;
   /** Simulated time multiplier for the terminator (?demo=1 runs at 60×). */
   sunSpeed?: number;
   onCountryClick?: (name: string, centroid: [number, number]) => void;
@@ -107,6 +111,7 @@ export default function GlobeCanvas({
   reduced = false,
   forceLost = false,
   forceUnavailable = false,
+  slate = true,
   sunSpeed = 1,
   onCountryClick,
   className,
@@ -411,16 +416,18 @@ export default function GlobeCanvas({
 
       {/* The slate stays mounted and crossfades out as the textures fade in (320ms), so there
           is never a frame with neither. */}
-      <div aria-hidden={(ready && !showLost) || undefined}>
-        <GlobeSlate
-          state={gone ? "unavailable" : showLost ? "lost" : "loading"}
-          onRestore={restore}
-          className={cn(
-            "[transition:opacity_320ms_var(--ease-out-quint)]",
-            ready && !showLost && "pointer-events-none opacity-0",
-          )}
-        />
-      </div>
+      {slate && (
+        <div aria-hidden={(ready && !showLost) || undefined}>
+          <GlobeSlate
+            state={gone ? "unavailable" : showLost ? "lost" : "loading"}
+            onRestore={restore}
+            className={cn(
+              "[transition:opacity_320ms_var(--ease-out-quint)]",
+              ready && !showLost && "pointer-events-none opacity-0",
+            )}
+          />
+        </div>
+      )}
 
       {/* the lower-third hover label: the place name, pinned to the pointer */}
       {labelText && labelPos && !small && !showLost && (

@@ -324,7 +324,7 @@ Reduced motion: token streaming still streams (it is content, not decoration) bu
 - **press (drag):** `cursor: grabbing`; pointer drag maps 1:1 to `scrollLeft`; on release, momentum runs a `requestAnimationFrame` decay at `v *= 0.94` per frame until `|v| < 0.4`, then snaps to the nearest item. Drag threshold `6px` before a press becomes a drag (so a tap still opens the item).
 - **focus-visible:** the rail is `tabindex="0"`; focus ring on the track; roving focus then lives on items.
 - **disabled:** cannot occur.
-- **loading:** 6 skeleton items at `196×108`, `bg --surface-2`, `radius --r-md`, static (no sweep), with a `--ff-mono 10px .12em uppercase --ink-muted` line at the rail's left: `BUILDING RUNNING ORDER`.
+- **loading:** 6 skeleton items at `196×108`, `bg --surface-2`, `radius --r-md`, carrying C-04's 1400ms opacity pulse staggered 90ms apart so the rail reads as filling left to right — **never a shimmer sweep** (DESIGN.md bans it). Held fully static they read as six dead boxes rather than as a running order being built. A `--ff-mono 10px .12em uppercase --ink-muted` line sits at the rail's left: `BUILDING RUNNING ORDER`.
 - **success:** not a state.
 - **error (`feed.recent` failed):** C-11 rail-error inline at the rail's left, the rail keeps its height so the layout never jumps.
 - **empty (zero snapshots):** C-11 rail-first-run, same fixed height.

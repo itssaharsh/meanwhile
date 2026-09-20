@@ -24,7 +24,25 @@ export function LogoMark({ size = 32, favicon = false, title = "Meanwhile" }: { 
 }
 
 /** The wordmark, whose dotless ı carries the mark as its tittle (brand/wordmark.html). */
-export function Wordmark({ size = 64 }: { size?: number }) {
+/** `plain` drops the two-tone tittle and renders the word alone.
+ *
+ *  Two reasons, both hard: wordmark.css says the teal crescent dies below about 28px, and the
+ *  tittle's other half is amber — which in this product means "the one frame on air". A brand
+ *  mark in the chyron is not a frame, and /_kit's amber-one-frame assertion is right to say so.
+ *  So the bar gets the word and the landing gets the mark. */
+export function Wordmark({ size = 64, plain = false, className }: { size?: number; plain?: boolean; className?: string }) {
+  if (plain) {
+    return (
+      <span
+        className={`mw-wordmark ${className ?? ""}`}
+        role="img"
+        aria-label="Meanwhile"
+        style={{ ["--mw-size" as string]: `${size}px` }}
+      >
+        Meanwhile
+      </span>
+    );
+  }
   return (
     <span className="mw-wordmark mw-wordmark--marked" role="img" aria-label="Meanwhile" style={{ ["--mw-size" as string]: `${size}px` }}>
       Meanwh

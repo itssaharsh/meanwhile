@@ -404,6 +404,11 @@ export const KIT: KitSection[] = [
       // The chip is grey on purpose: the viewer is choosing, but amber marks the frame on air,
       // and only that.
       { id: "chair", frame: "bar", render: topBar("onair", ON_AIR, { chair: { untilMs: NOW + 4 * 60_000, onRelease: () => {} } }) },
+      // /watch framing: the wordmark and the legend button. The legend opens itself on a first
+      // visit, so in the kit it is whatever localStorage says — open it from the button.
+      { id: "framing", frame: "bar", render: topBar("onair", ON_AIR, { framing: true }) },
+      // The 404's bar: the chyron is real, but the two actions have no "this" to act on.
+      { id: "no-actions", frame: "bar", render: topBar("onair", ON_AIR, { actions: false }) },
     ],
   },
   {
@@ -465,6 +470,7 @@ export const KIT: KitSection[] = [
       { id: "rail-idle", frame: "rail", render: rail("idle") },
       { id: "rail-rerank", frame: "rail", live: true, render: (ctx) => <RerankLoop once={ctx.isolated} /> },
       { id: "rail-loading", frame: "rail", render: rail("loading") },
+      { id: "rail-loading-empty", frame: "rail", extra: true, render: rail("loading", { loadingCounts: { checked: 0, total: 11, scored: 0 } }) },
       { id: "rail-empty", frame: "rail", render: rail("first") },
       { id: "rail-error", frame: "rail", render: rail("error") },
       { id: "rail-scrolled-end", frame: "rail", render: rail("idle", { scrollToEnd: true }) },

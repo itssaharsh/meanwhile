@@ -248,6 +248,11 @@ export const ADDED = {
     "author request 2026-09-21 — the one rule a judge needs to read the colours",
     "C-17 ?state=landing",
   ),
+  // The button that opens the legend in the chyron. The wording is COPY.md §6's own first chat
+  // chip, reused deliberately: a viewer who wonders this has always been able to ask it, and the
+  // legend is the answer that needs no model call.
+  legendOpen: s("What am I looking at?", "COPY.md §6 chip text, author request 2026-09-21", "C-01 legend button"),
+  legendClose: s("Got it", "author request 2026-09-21 — dismisses the legend for good", "C-01 legend popover"),
   introAmber: s(
     "Amber marks the one frame on air. Nothing else in the product is amber.",
     "author request 2026-09-22 — the other half of the colour rule, for the landing",

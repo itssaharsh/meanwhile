@@ -7,7 +7,8 @@ import { useReduced } from "@/lib/hooks";
 import type { Snapshot } from "@/lib/types";
 import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { EnvelopeArc } from "./brand";
+import { EnvelopeArc, Wordmark } from "./brand";
+import { Legend } from "./Legend";
 
 const E = [0.22, 1, 0.36, 1] as const;
 
@@ -84,6 +85,8 @@ export function TopBar({
   reduced: forceReduced,
   onAsk,
   onSend,
+  actions = true,
+  framing = false,
   className,
 }: {
   state: TopBarState;
@@ -103,6 +106,13 @@ export function TopBar({
   reduced?: boolean;
   onAsk?: () => void;
   onSend?: () => void;
+  /** False on the 404, where "Ask about this" and "Send me this" have no "this" to act on —
+   *  a control that cannot work is worse than no control. The chyron itself stays, because the
+   *  channel really is still running behind the error page. */
+  actions?: boolean;
+  /** `/watch` only: the wordmark and the legend button. The landing already says both things
+   *  at length, and the 404 is not a place to introduce a product. */
+  framing?: boolean;
   className?: string;
 }) {
   const reduced = useReduced(forceReduced);
@@ -226,7 +236,20 @@ export function TopBar({
         className,
       )}
     >
+      {/* The wordmark joins the LEFT GROUP rather than becoming a third flex child: as its own
+          child, justify-between pushed the chyron into the middle of the bar, and the place name
+          on air is the one thing that must stay hard left. */}
       <div className="flex min-w-0 items-center gap-2.5 max-sm:gap-2" data-snapshot-id={lit ? onAir!.snapshotId : undefined}>
+        {framing && (
+          <a
+            href="/"
+            // Permanent furniture on the player. Below 1100 the place name needs the room more
+            // than the brand does, so this goes before the actions lose their words.
+            className="mr-0.5 shrink-0 text-ink-muted [transition:color_150ms_var(--ease-out-quint)] hover:text-ink max-[1099px]:hidden"
+          >
+            <Wordmark size={15} plain />
+          </a>
+        )}
         <Tally lit={lit} pulseKey={state === "onair" ? onAir?.snapshotId : undefined} reduced={reduced} />
         <div className="flex min-w-0 items-center">
           <div role="status" aria-live="polite" aria-atomic="true" className="flex min-w-0 items-center">
@@ -268,31 +291,36 @@ export function TopBar({
             <span className="hidden tnum max-[899px]:inline">{formatAge(Math.max(0, chair.untilMs - Date.now()))}</span>
           </button>
         )}
-        <Button
-          variant="default"
-          size="md"
-          onClick={onAsk}
-          aria-label={COPY.topBar.askAria}
-          title={COPY.topBar.ask}
-          className="hit-44 max-[900px]:size-[44px] max-[900px]:px-0"
-        >
-          <MessageCircle aria-hidden="true" className="hidden size-[18px] max-[900px]:block" strokeWidth={1.6} />
-          <span className="max-[900px]:hidden">{COPY.topBar.ask}</span>
-        </Button>
-        <Button
-          variant="strong"
-          size="md"
-          onClick={sendDisabled ? undefined : onSend}
-          aria-label={COPY.topBar.sendAria}
-          aria-disabled={sendDisabled || undefined}
-          aria-describedby={sendDisabled ? disabledId : undefined}
-          title={sendDisabled ? COPY.rail.firstRunTitle : COPY.topBar.send}
-          focusableWhenDisabled
-          className="hit-44 max-[900px]:size-[44px] max-[900px]:px-0"
-        >
-          <EnvelopeArc aria-hidden="true" size={18} className="hidden max-[900px]:block" />
-          <span className="max-[900px]:hidden">{COPY.topBar.send}</span>
-        </Button>
+        {framing && <Legend reduced={forceReduced} />}
+        {actions && (
+          <>
+            <Button
+              variant="default"
+              size="md"
+              onClick={onAsk}
+              aria-label={COPY.topBar.askAria}
+              title={COPY.topBar.ask}
+              className="hit-44 max-[900px]:size-[44px] max-[900px]:px-0"
+            >
+              <MessageCircle aria-hidden="true" className="hidden size-[18px] max-[900px]:block" strokeWidth={1.6} />
+              <span className="max-[900px]:hidden">{COPY.topBar.ask}</span>
+            </Button>
+            <Button
+              variant="strong"
+              size="md"
+              onClick={sendDisabled ? undefined : onSend}
+              aria-label={COPY.topBar.sendAria}
+              aria-disabled={sendDisabled || undefined}
+              aria-describedby={sendDisabled ? disabledId : undefined}
+              title={sendDisabled ? COPY.rail.firstRunTitle : COPY.topBar.send}
+              focusableWhenDisabled
+              className="hit-44 max-[900px]:size-[44px] max-[900px]:px-0"
+            >
+              <EnvelopeArc aria-hidden="true" size={18} className="hidden max-[900px]:block" />
+              <span className="max-[900px]:hidden">{COPY.topBar.send}</span>
+            </Button>
+          </>
+        )}
         {sendDisabled && (
           <span id={disabledId} className="sr-only">
             {COPY.rail.firstRunTitle}
