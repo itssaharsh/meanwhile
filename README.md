@@ -355,7 +355,8 @@ Billing. The reasoning is written down next to each camera in `convex/seed.ts`.
 
 There is no viewer counter. The prototype had one, a random walk that invented an audience every
 two seconds, and I deleted it on 20 September along with the "240 cameras" beside it. The page
-now says what I can defend: 11 always-on cameras, 177 countries on demand.
+now says what I can defend: 11 always-on cameras, and 103 countries I hold at least one camera
+for. Not 177 — that is every polygon on the globe, and about 74 of them have no camera at all.
 
 The chat is a real model call. It used to be regex matching over the feed, sitting behind a box
 that said "ask about what's on air", which was a claim the product couldn't keep. It now goes

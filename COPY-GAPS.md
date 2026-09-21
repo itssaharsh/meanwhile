@@ -197,7 +197,7 @@ with its agreements corrected and the numeral kept.
 | `COPY.countryEmpty.misplacedBody` | 1 frame came back and 1 was filmed somewhere else — it was Times Square. Wrong place, so it’s out. | 3 frames came back and 3 were filmed somewhere else — one was Times Square. Wrong place, so they’re out. |
 | `ADDED.chatSummary` | 1 step · 2.1 s | 3 steps · 2.1 s |
 
-## Strings beyond COPY.md (72)
+## Strings beyond COPY.md (74)
 
 Each rendered with the arguments its real call site passes.
 
@@ -246,6 +246,8 @@ Each rendered with the arguments its real call site passes.
 | `introPick` | Or pick a country | author request 2026-09-21 | C-17 ?state=landing |
 | `introStart` | Start watching | author request 2026-09-21 | C-17 ?state=landing |
 | `introTitle` | Meanwhile — the planet, on air | COPY.md §10 OG title | C-17 ?state=landing |
+| `legendClose` | Got it | author request 2026-09-21 — dismisses the legend for good | C-01 legend popover |
+| `legendOpen` | What am I looking at? | COPY.md §6 chip text, author request 2026-09-21 | C-01 legend button |
 | `mailBounced` | Bounced · 20:38 UTC | UI-SPEC C-09, shaped like COPY §7's chips | C-09 ?state=mail-bounced |
 | `mailDone` | Done | UI-SPEC C-09 success | C-09 ?state=mail-delivered |
 | `mailUnconfirmed` | No confirmation — check spam | UI-SPEC C-09 | C-09 ?state=mail-unconfirmed |

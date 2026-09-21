@@ -136,9 +136,15 @@ title `Meanwhile — a live channel of Earth`
 description `An AI director watches real webcams around the world and cuts the best one on air.
 True day and night on a spinning globe. Every frame checked for age and place before it airs.`
 OG title `Meanwhile — the planet, on air`
-OG description `Santoríni at 9.0. Tromsø at 9.6. A road outside Queenstown at 3.8. One live view
-at a time, age-checked and place-checked before it airs. Click any of 177 countries and watch it
-go and find one.`
+OG description `An AI director watches real webcams and cuts the best one on air — and every
+frame says how old it is. Pick any of 100+ countries with a camera and watch it go find one.`
+
+> Amended 2026-09-21. The previous text quoted three live scores and said "177 countries". The
+> scores went stale within the hour, and 177 is every polygon on the globe — roughly 74 of them
+> have no camera at all, so it claimed coverage the product does not have. The count now states
+> only countries with at least one camera, read from the live coverage index (103 at the time of
+> writing, across 711 cameras). It is written as "100+" so it stays true as the index moves; if
+> it ever drops below 100, the claim must come down with it.
 
 ## Banned
 "Oops" · "Uh oh" · bare "Something went wrong" · "Please try again later" · exclamation marks ·

@@ -198,8 +198,10 @@ export const COPY = {
     description:
       "An AI director watches real webcams around the world and cuts the best one on air. True day and night on a spinning globe. Every frame checked for age and place before it airs.",
     ogTitle: "Meanwhile — the planet, on air",
+    // Amended 2026-09-21: the old text froze three live scores and claimed 177 countries, which
+    // is every polygon on the globe rather than the ones that have a camera. See COPY.md §10.
     ogDescription:
-      "Santoríni at 9.0. Tromsø at 9.6. A road outside Queenstown at 3.8. One live view at a time, age-checked and place-checked before it airs. Click any of 177 countries and watch it go and find one.",
+      "An AI director watches real webcams and cuts the best one on air — and every frame says how old it is. Pick any of 100+ countries with a camera and watch it go find one.",
   },
 } as const;
 
