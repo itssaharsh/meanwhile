@@ -280,6 +280,7 @@ export function Channel({ children }: { children?: ReactNode }) {
         onSend={mail.show}
         actions={player}
         framing={pathname === "/watch"}
+        wordmark={!landing}
         chair={chair?.by === "viewer" && chair.until ? { untilMs: chair.until, onRelease: () => void releaseChair({}).catch(() => undefined) } : null}
       />
 

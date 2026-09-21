@@ -600,7 +600,7 @@ export const KIT: KitSection[] = [
   },
   {
     // Not a spec'd state: the country click running against the live deployment, so C-08's
-    // stages and C-11's empty states can be judged on real data before block 2 docks them.
+    // stages and C-11's empty states can be judged against real data rather than fixtures.
     id: "LIVE",
     name: "Country click · live",
     states: [{ id: "live-fetch", frame: "live", live: true, render: () => <LiveFetch /> }],

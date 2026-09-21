@@ -14,7 +14,7 @@ const centroid = (name: string) => (countriesRaw as Country[]).find((c) => c.n =
 
 /** The country click, end to end, against the live deployment: click a country on the globe
  *  and the panel shows the ladder's named stages, then the story or the empty state that
- *  matches what failed. Block 2 moves this panel into the dock. */
+ *  matches what failed. The docked version of this panel is what the product ships. */
 function LiveFetchInner({ country }: { country?: string }) {
   const now = useNow(60_000);
   const f = useCountryFetch();

@@ -87,6 +87,7 @@ export function TopBar({
   onSend,
   actions = true,
   framing = false,
+  wordmark = false,
   className,
 }: {
   state: TopBarState;
@@ -110,9 +111,13 @@ export function TopBar({
    *  a control that cannot work is worse than no control. The chyron itself stays, because the
    *  channel really is still running behind the error page. */
   actions?: boolean;
-  /** `/watch` only: the wordmark and the legend button. The landing already says both things
-   *  at length, and the 404 is not a place to introduce a product. */
+  /** `/watch` only: the legend button. The landing already says these two rules at length, and
+   *  an error page is not where you introduce a product. */
   framing?: boolean;
+  /** The wordmark. True on the player AND the 404 — an error page with a nameless bar reads as
+   *  a broken site rather than as a known place that has nothing at this address. When there is
+   *  no cut to show, the wordmark stands alone rather than beside a placeholder chyron. */
+  wordmark?: boolean;
   className?: string;
 }) {
   const reduced = useReduced(forceReduced);
@@ -226,6 +231,11 @@ export function TopBar({
     line = sentence(COPY.rail.firstRunTitle);
   }
 
+  // On the 404 with no cut to show, the bar is the wordmark and nothing else. "Nothing on air
+  // yet" there says something about the channel that the 404 has no business asserting — the
+  // page already says "Off air", and the channel itself is usually running perfectly well.
+  const placeholderOnly = wordmark && !framing && !onAir;
+
   return (
     <header
       role="banner"
@@ -240,20 +250,24 @@ export function TopBar({
           child, justify-between pushed the chyron into the middle of the bar, and the place name
           on air is the one thing that must stay hard left. */}
       <div className="flex min-w-0 items-center gap-2.5 max-sm:gap-2" data-snapshot-id={lit ? onAir!.snapshotId : undefined}>
-        {framing && (
+        {wordmark && (
           <a
             href="/"
-            // Permanent furniture on the player. Below 1100 the place name needs the room more
-            // than the brand does, so this goes before the actions lose their words.
-            className="mr-0.5 shrink-0 text-ink-muted [transition:color_150ms_var(--ease-out-quint)] hover:text-ink max-[1099px]:hidden"
+            // Permanent furniture. Below 1100 the place name needs the room more than the brand
+            // does, so this goes before the actions lose their words — except when it is the
+            // only thing in the bar, which is the 404 with nothing on air.
+            className={cn(
+              "mr-0.5 shrink-0 text-ink-muted [transition:color_150ms_var(--ease-out-quint)] hover:text-ink",
+              placeholderOnly ? "max-sm:block" : "max-[1099px]:hidden",
+            )}
           >
             <Wordmark size={15} plain />
           </a>
         )}
-        <Tally lit={lit} pulseKey={state === "onair" ? onAir?.snapshotId : undefined} reduced={reduced} />
+        {!placeholderOnly && <Tally lit={lit} pulseKey={state === "onair" ? onAir?.snapshotId : undefined} reduced={reduced} />}
         <div className="flex min-w-0 items-center">
           <div role="status" aria-live="polite" aria-atomic="true" className="flex min-w-0 items-center">
-            {line}
+            {placeholderOnly ? null : line}
           </div>
           {meta && (
             <span className="ml-2 flex min-w-0 items-center max-[1099px]:hidden">
@@ -321,7 +335,11 @@ export function TopBar({
             </Button>
           </>
         )}
-        {sendDisabled && (
+        {/* The reason "Send me this" is disabled. Gated on `actions` as well as `sendDisabled`,
+            because it is the aria-describedby target of a button that is not always rendered —
+            on the 404 the button was gone and this stayed behind, an orphaned description of
+            nothing, which is why "Nothing on air yet" was still in that page's DOM. */}
+        {actions && sendDisabled && (
           <span id={disabledId} className="sr-only">
             {COPY.rail.firstRunTitle}
           </span>
