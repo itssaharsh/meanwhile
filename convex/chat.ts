@@ -77,6 +77,35 @@ function modelState(ctx: ActionCtx): ModelStateStore {
 
 export type ChannelRow = { snapshotId: string; line: string };
 
+/** The subject when the viewer pulled a country up off the globe.
+ *
+ *  A country story is a `stories` row, not a frame from the camera pool, so it cannot be passed
+ *  as a snapshot id — which is why this used to fall back to the cut and answer confidently
+ *  about somewhere else entirely. Click China, ask "where is the sun", get told about Reykjavík.
+ *  A story carries its own frame bytes, place, age and caption, so it can be the subject on
+ *  exactly the same terms as a pool frame. The only thing it has no camera record for is the
+ *  timezone, derived here from longitude the same way the country click itself derives it. */
+export const storyFor = internalQuery({
+  args: { storyId: v.id("stories") },
+  handler: async (ctx, { storyId }) => {
+    const story = await ctx.db.get(storyId);
+    if (!story?.storageId) return null;
+    return {
+      storageId: story.storageId,
+      place: story.place,
+      country: story.country,
+      tz: Math.round(story.lng / 15),
+      score: story.score ?? null,
+      caption: story.caption,
+      tags: story.tags,
+      capturedAt: story.capturedAt ?? null,
+      headline: story.headline ?? null,
+      // A country click is never the cut: the director only ever airs the camera pool.
+      onAir: false,
+    };
+  },
+});
+
 /** The frame a question is about, with the bytes.
  *
  *  `snapshotId` is what the viewer is actually looking at — the story they opened, which is not
@@ -156,6 +185,8 @@ export const ask = action({
     question: v.string(),
     /** The frame the viewer has open. Omitted means the cut. */
     snapshotId: v.optional(v.id("snapshots")),
+    /** A country the viewer pulled up off the globe. Wins over snapshotId when both are sent. */
+    storyId: v.optional(v.id("stories")),
     // BYOK, exactly as the scoring path takes it: the caller's key is used for their request
     // and dropped, and it never falls through to ours.
     provider: v.optional(v.string()),
@@ -164,7 +195,7 @@ export const ask = action({
   },
   handler: async (
     ctx,
-    { question, snapshotId, provider, apiKey, model },
+    { question, snapshotId, storyId, provider, apiKey, model },
   ): Promise<{ text: string; steps: string[]; servedBy: string | null; place: string | null; error?: string }> => {
     const q = question.trim().slice(0, 500);
     if (!q) return { text: "", steps: [], servedBy: null, place: null, error: "empty" };
@@ -184,7 +215,9 @@ export const ask = action({
       }
     }
 
-    const frame = await ctx.runQuery(internal.chat.frameFor, snapshotId ? { snapshotId } : {});
+    const frame = storyId
+      ? await ctx.runQuery(internal.chat.storyFor, { storyId })
+      : await ctx.runQuery(internal.chat.frameFor, snapshotId ? { snapshotId } : {});
     if (!frame) {
       return { text: "Nothing on air yet.", steps: [STEPS[0]], servedBy: null, place: null, error: "nothing-on-air" };
     }
@@ -203,7 +236,10 @@ export const ask = action({
           ? `${Math.max(1, Math.round(ageMs / 60000))} minutes old, verified from the source`
           : `${Math.round(ageMs / 3600000)} hours old`;
 
-    const elsewhere = await ctx.runQuery(internal.chat.channelNow, snapshotId ? { exceptSnapshotId: snapshotId } : {});
+    const elsewhere = await ctx.runQuery(
+      internal.chat.channelNow,
+      !storyId && snapshotId ? { exceptSnapshotId: snapshotId } : {},
+    );
 
     const said = await visionComplete({
       label: `chat ${frame.place}`,

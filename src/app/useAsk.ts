@@ -89,10 +89,13 @@ function linkPlaces(answer: string, candidates: Snapshot[]): { text: string; pla
   return { text, places };
 }
 
-/** @param candidates every place a chip could resolve to.
- *  @param subject the snapshotId the question is ABOUT — the story the viewer has open. Null
- *  means the cut, which is what the bar's own "Ask about this" means. */
-export function useAsk(candidates: Snapshot[], subject?: string | null): Ask {
+/** What the question is ABOUT. A pool frame and a country pulled off the globe are different
+ *  tables, and the chat action takes whichever it is given; null means the cut, which is what
+ *  the bar's own "Ask about this" means. */
+export type AskSubject = { kind: "snapshot" | "story"; id: string } | null;
+
+/** @param candidates every place a chip could resolve to. */
+export function useAsk(candidates: Snapshot[], subject?: AskSubject): Ask {
   const askAction = useAction(api.chat.ask);
   const [state, setState] = useState<ChatState>("empty");
   const [question, setQuestion] = useState("");
@@ -149,9 +152,13 @@ export function useAsk(candidates: Snapshot[], subject?: string | null): Ask {
         return;
       }
 
-      // The frame the viewer has open, not whatever the director happens to be showing. The
-      // first candidate is the subject: Channel puts the open story at the head of the list.
-      askAction({ question: q, ...(subject ? { snapshotId: subject as never } : {}) })
+      // The frame the viewer has open, not whatever the director happens to be showing — and a
+      // country pulled up off the globe counts, which it did not until 2026-09-21.
+      askAction({
+        question: q,
+        ...(subject?.kind === "snapshot" ? { snapshotId: subject.id as never } : {}),
+        ...(subject?.kind === "story" ? { storyId: subject.id as never } : {}),
+      })
         .then((r) => {
           if (cancelled.current) return;
           clearTimers();

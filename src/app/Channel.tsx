@@ -16,7 +16,7 @@ import { useChannel, DEMO } from "./useChannel";
 import { useCountryFetch } from "./useCountryFetch";
 import { StoryPanel } from "./StoryPanel";
 
-import { useAsk } from "./useAsk";
+import { useAsk, type AskSubject } from "./useAsk";
 import { useSubscribe } from "./useSubscribe";
 import { SubscribeSheet } from "@/components/SubscribeSheet";
 import { FrameDialog } from "@/components/FrameDialog";
@@ -163,8 +163,16 @@ export function Channel({ children }: { children?: ReactNode }) {
   // What the question is ABOUT: the story the viewer has open, falling back to the cut. A
   // country story is a `stories` row rather than a pool frame, so it has no snapshot to send
   // and the cut stays the subject.
-  const askSubject = (storyOverride ?? onAir)?.snapshotId ?? null;
-  const chat = useAsk(askCandidates, picked ? (onAir?.snapshotId ?? null) : askSubject);
+  // What "Ask about this" is about, in the order the viewer would expect: a country they pulled
+  // off the globe, then a story they opened from the running order, then the frame on air.
+  // `country.story` is a `stories` row mapped into Snapshot shape, so its id is a stories id.
+  const askSubject: AskSubject = picked && country.story
+    ? { kind: "story", id: country.story.snapshotId }
+    : (storyOverride ?? onAir)
+      ? { kind: "snapshot", id: (storyOverride ?? onAir)!.snapshotId }
+      : null;
+  const askPlace = picked && country.story ? country.story.place.name : ((storyOverride ?? onAir)?.place.name ?? null);
+  const chat = useAsk(askCandidates, askSubject);
   const mail = useSubscribe();
 
   // The director's chair: who is choosing the frame on air.
@@ -354,8 +362,8 @@ export function Channel({ children }: { children?: ReactNode }) {
               onStop={chat.stop}
               onPlace={goToPlace}
               subject={
-                askSubject
-                  ? { place: (storyOverride ?? onAir)!.place.name, onAir: askSubject === onAir?.snapshotId && !picked }
+                askPlace
+                  ? { place: askPlace, onAir: askSubject?.kind === "snapshot" && askSubject.id === onAir?.snapshotId }
                   : null
               }
             />
